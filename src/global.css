@@ -1,0 +1,196 @@
+@import "tailwindcss";
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");
+
+/**
+ * 프로젝트 기본 스타일 초기화
+ */
+@layer base {
+    html,
+    #root {
+        @apply w-full h-full;
+        font-family:
+            "Pretendard",
+            -apple-system,
+            BlinkMacSystemFont,
+            system-ui,
+            sans-serif;
+    }
+
+    body {
+        @apply w-full h-full min-w-[360px];
+        font-family:
+            "Pretendard",
+            -apple-system,
+            BlinkMacSystemFont,
+            system-ui,
+            sans-serif;
+    }
+
+    h1 {
+        @apply font-bold leading-[1.3];
+        font-size: 2.5rem;
+    }
+
+    h2 {
+        @apply font-bold leading-[1.35];
+        font-size: 2rem;
+    }
+
+    h3 {
+        @apply font-medium leading-[1.4];
+        font-size: 1.5rem;
+    }
+
+    h4 {
+        @apply font-medium leading-[1.45];
+        font-size: 1.25rem;
+    }
+
+    h5 {
+        @apply font-medium leading-[1.5];
+        font-size: 1.125rem;
+    }
+
+    body {
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.7;
+    }
+
+    button {
+        cursor: pointer;
+    }
+
+    button:disabled {
+        cursor: not-allowed;
+    }
+
+    @media (max-width: 1280px) {
+        .bg-layout-md-none {
+            background-image: none !important;
+        }
+
+        .bg-layout-md-none::after {
+            display: none !important;
+        }
+    }
+}
+
+@layer utilities {
+    .scrollbar-track-transparent {
+        scrollbar-color: #bdbdbd transparent;
+    }
+
+    .scrollbar-track-transparent::-webkit-scrollbar {
+        width: 8px;
+        background-color: transparent;
+    }
+
+    .scrollbar-track-transparent::-webkit-scrollbar-track {
+        background-color: transparent;
+    }
+
+    .scrollbar-track-transparent::-webkit-scrollbar-thumb {
+        background-color: #bdbdbd;
+        border-radius: 999px;
+    }
+
+    .no-scrollbar {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+@theme {
+    /* ===== Primary ===== */
+    --primary-blue: #001871;
+    --primary-blue-pale: #e1ecff;
+    --primary-blue-gray: #808bb8;
+    --primary-blue-shadow: #99a3c6;
+    --primary-blue-light: #33468d;
+    --primary-blue-dark: #001256;
+
+    /* ===== Secondary ===== */
+    --secondary-sky: #b8e8fe;
+    --secondary-sky-pale: #d4f1fe;
+    --secondary-sky-light: #bfeafe;
+    --secondary-sky-dark: #94dbfb;
+
+    /* ===== Accent ===== */
+    --accent-purple: #d7c1f2;
+
+    /* ===== Point ===== */
+    --point-yellow: #fff59d;
+
+    /* ===== Background ===== */
+    --background-white: #fefefe;
+
+    /* ===== Grayscale ===== */
+    --grayscale-black: #222222;
+    --grayscale-dark-gray: #666666;
+    --grayscale-medium-gray: #999999;
+    --grayscale-light-gray: #cccccc;
+    --grayscale-border: #dedede;
+    --grayscale-bg-gray: #f3f3f3;
+
+    /* ===== System ===== */
+    --system-error: #f94848;
+    --system-warning: #ffbf2b;
+    --system-success: #4caf50;
+    --system-info: #0091ea;
+
+    /* ===== Label ===== */
+    --text-label-small: 14px;
+    --text-label-small--line-height: 20px;
+    --text-label-small--font-weight: 500;
+
+    --text-label-medium: 16px;
+    --text-label-medium--line-height: 24px;
+    --text-label-medium--font-weight: 500;
+
+    --text-label-large: 18px;
+    --text-label-large--line-height: 24px;
+    --text-label-large--font-weight: 500;
+
+    /* ===== Body ===== */
+    --text-body-tiny: 14px;
+    --text-body-tiny--line-height: 20px;
+    --text-body-tiny--font-weight: 400;
+
+    --text-body-small: 16px;
+    --text-body-small--line-height: 24px;
+    --text-body-small--font-weight: 400;
+
+    --text-body-medium: 18px;
+    --text-body-medium--line-height: 24px;
+    --text-body-medium--font-weight: 400;
+
+    --text-body-large: 20px;
+    --text-body-large--line-height: 32px;
+    --text-body-large--font-weight: 400;
+
+    /* ===== Title ===== */
+    --text-title-tiny: 16px;
+    --text-title-tiny--line-height: 24px;
+    --text-title-tiny--font-weight: 600;
+    --text-title-tiny--letter-spacing: -0.025em;
+
+    --text-title-small: 24px;
+    --text-title-small--line-height: 32px;
+    --text-title-small--font-weight: 600;
+    --text-title-small--letter-spacing: -0.025em;
+
+    --text-title-medium: 36px;
+    --text-title-medium--line-height: 48px;
+    --text-title-medium--font-weight: 600;
+    --text-title-medium--letter-spacing: -0.025em;
+
+    --text-title-large: 48px;
+    --text-title-large--line-height: 64px;
+    --text-title-large--font-weight: 600;
+    --text-title-large--letter-spacing: -0.025em;
+}
