@@ -133,7 +133,7 @@ export default function PropertySearch() {
           </div>
 
           {/* 매물 개수 표시 */}
-          <div className="flex-shrink-0 p-4 border-t border-gray-200 text-sm text-gray-600">
+          <div className="shrink-0 p-4 border-t border-gray-200 text-sm text-gray-600">
             {filteredProperties.length}개의 매물을 찾았습니다.
           </div>
         </div>
