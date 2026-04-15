@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react';
-import type { Property } from '@shared/types';
-import { formatPrice } from '@shared/lib/format';
-import { usePersistFn } from '@/hooks/usePersistFn';
-import { cn } from '@/lib/utils';
+import { useEffect, useRef } from "react";
+import type { Property } from "@/shared/types";
+import { formatPrice } from "@/shared/lib/format";
+import { usePersistFn } from "@/hooks/usePersistFn";
+import { cn } from "@/lib/utils";
 
 declare global {
   interface Window {
@@ -10,23 +10,24 @@ declare global {
   }
 }
 
-const NAVER_CLIENT_ID = import.meta.env.VITE_NAVER_CLIENT_ID || 'YOUR_NAVER_CLIENT_ID';
+const NAVER_CLIENT_ID =
+  import.meta.env.VITE_NAVER_CLIENT_ID || "YOUR_NAVER_CLIENT_ID";
 
 function loadNaverMapScript() {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     if (window.naver?.maps) {
       resolve(null);
       return;
     }
 
-    const script = document.createElement('script');
+    const script = document.createElement("script");
     script.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${NAVER_CLIENT_ID}`;
     script.async = true;
     script.onload = () => {
       resolve(null);
     };
     script.onerror = () => {
-      console.error('Failed to load Naver Map script');
+      console.error("Failed to load Naver Map script");
     };
     document.head.appendChild(script);
   });
@@ -58,7 +59,7 @@ export function NaverMapView({
   const init = usePersistFn(async () => {
     await loadNaverMapScript();
     if (!mapContainer.current || !window.naver?.maps) {
-      console.error('Map container or Naver Maps not found');
+      console.error("Map container or Naver Maps not found");
       return;
     }
 
@@ -79,7 +80,9 @@ export function NaverMapView({
   // 지도 중심 및 줌 업데이트
   useEffect(() => {
     if (map.current && window.naver?.maps) {
-      map.current.setCenter(new window.naver.maps.LatLng(center.lat, center.lng));
+      map.current.setCenter(
+        new window.naver.maps.LatLng(center.lat, center.lng)
+      );
       map.current.setZoom(zoom);
     }
   }, [center, zoom]);
@@ -89,25 +92,28 @@ export function NaverMapView({
     if (!map.current || !window.naver?.maps) return;
 
     // 기존 마커 제거
-    markersRef.current.forEach((marker) => {
+    markersRef.current.forEach(marker => {
       marker.setMap(null);
     });
     markersRef.current.clear();
 
     // 새 마커 추가
-    properties.forEach((property) => {
+    properties.forEach(property => {
       const isSelected = property.id === selectedPropertyId;
       const isHovered = property.id === hoveredPropertyId;
 
       // 마커 생성
       const marker = new window.naver.maps.Marker({
-        position: new window.naver.maps.LatLng(property.latitude, property.longitude),
+        position: new window.naver.maps.LatLng(
+          property.latitude,
+          property.longitude
+        ),
         map: map.current,
         title: property.title,
       });
 
       // 마커 클릭 이벤트
-      window.naver.maps.Event.addListener(marker, 'click', () => {
+      window.naver.maps.Event.addListener(marker, "click", () => {
         onPropertySelect?.(property);
       });
 
@@ -116,6 +122,9 @@ export function NaverMapView({
   }, [properties, selectedPropertyId, hoveredPropertyId, onPropertySelect]);
 
   return (
-    <div ref={mapContainer} className={cn('w-full h-full bg-gray-100', className)} />
+    <div
+      ref={mapContainer}
+      className={cn("w-full h-full bg-gray-100", className)}
+    />
   );
 }

@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react';
-import type { Property } from '@shared/types';
-import { formatPrice } from '@shared/lib/format';
-import { usePersistFn } from '@/hooks/usePersistFn';
-import { cn } from '@/lib/utils';
+import { useEffect, useRef } from "react";
+import type { Property } from "@/shared/types";
+import { formatPrice } from "@/shared/lib/format";
+import { usePersistFn } from "@/hooks/usePersistFn";
+import { cn } from "@/lib/utils";
 
 declare global {
   interface Window {
@@ -13,21 +13,21 @@ declare global {
 const API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY;
 const FORGE_BASE_URL =
   import.meta.env.VITE_FRONTEND_FORGE_API_URL ||
-  'https://forge.butterfly-effect.dev';
+  "https://forge.butterfly-effect.dev";
 const MAPS_PROXY_URL = `${FORGE_BASE_URL}/v1/maps/proxy`;
 
 function loadMapScript() {
-  return new Promise((resolve) => {
-    const script = document.createElement('script');
+  return new Promise(resolve => {
+    const script = document.createElement("script");
     script.src = `${MAPS_PROXY_URL}/maps/api/js?key=${API_KEY}&v=weekly&libraries=marker,places,geocoding,geometry`;
     script.async = true;
-    script.crossOrigin = 'anonymous';
+    script.crossOrigin = "anonymous";
     script.onload = () => {
       resolve(null);
       script.remove();
     };
     script.onerror = () => {
-      console.error('Failed to load Google Maps script');
+      console.error("Failed to load Google Maps script");
     };
     document.head.appendChild(script);
   });
@@ -54,12 +54,14 @@ export function PropertyMapView({
 }: PropertyMapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<Map<string, google.maps.marker.AdvancedMarkerElement>>(new Map());
+  const markersRef = useRef<
+    Map<string, google.maps.marker.AdvancedMarkerElement>
+  >(new Map());
 
   const init = usePersistFn(async () => {
     await loadMapScript();
     if (!mapContainer.current) {
-      console.error('Map container not found');
+      console.error("Map container not found");
       return;
     }
     map.current = new window.google.maps.Map(mapContainer.current, {
@@ -69,7 +71,7 @@ export function PropertyMapView({
       fullscreenControl: true,
       zoomControl: true,
       streetViewControl: false,
-      mapId: 'DEMO_MAP_ID',
+      mapId: "DEMO_MAP_ID",
     });
   });
 
@@ -91,28 +93,28 @@ export function PropertyMapView({
     if (!map.current || !window.google) return;
 
     // 기존 마커 제거
-    markersRef.current.forEach((marker) => {
+    markersRef.current.forEach(marker => {
       marker.map = null;
     });
     markersRef.current.clear();
 
     // 새 마커 추가
-    properties.forEach((property) => {
+    properties.forEach(property => {
       const isSelected = property.id === selectedPropertyId;
       const isHovered = property.id === hoveredPropertyId;
 
       // 마커 컨텐츠 생성
-      const markerContent = document.createElement('div');
+      const markerContent = document.createElement("div");
       markerContent.className = cn(
-        'flex items-center justify-center px-3 py-1 rounded-full font-bold text-sm cursor-pointer transition-all',
+        "flex items-center justify-center px-3 py-1 rounded-full font-bold text-sm cursor-pointer transition-all",
         isSelected
-          ? 'bg-blue-600 text-white shadow-lg scale-110'
+          ? "bg-blue-600 text-white shadow-lg scale-110"
           : isHovered
-            ? 'bg-orange-500 text-white shadow-lg scale-105'
-            : 'bg-orange-500 text-white shadow-md'
+            ? "bg-orange-500 text-white shadow-lg scale-105"
+            : "bg-orange-500 text-white shadow-md"
       );
       markerContent.textContent = formatPrice(property.price);
-      markerContent.style.whiteSpace = 'nowrap';
+      markerContent.style.whiteSpace = "nowrap";
 
       const marker = new window.google.maps.marker.AdvancedMarkerElement({
         map: map.current,
@@ -120,7 +122,7 @@ export function PropertyMapView({
         content: markerContent,
       });
 
-      marker.addListener('click', () => {
+      marker.addListener("click", () => {
         onPropertySelect?.(property);
       });
 
@@ -128,7 +130,5 @@ export function PropertyMapView({
     });
   }, [properties, selectedPropertyId, hoveredPropertyId, onPropertySelect]);
 
-  return (
-    <div ref={mapContainer} className={cn('w-full h-full', className)} />
-  );
+  return <div ref={mapContainer} className={cn("w-full h-full", className)} />;
 }

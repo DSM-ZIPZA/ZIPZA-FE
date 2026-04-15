@@ -1,8 +1,13 @@
-import type { Property } from '@shared/types';
-import { formatPrice, formatArea, formatPhone } from '@shared/lib/format';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { MapPin, Phone, X } from 'lucide-react';
+import type { Property } from "@/shared/types";
+import { formatPrice, formatArea, formatPhone } from "@/shared/lib/format";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/dialog";
+import { Button } from "@/shared/ui/button";
+import { MapPin, Phone, X } from "lucide-react";
 
 interface PropertyDetailModalProps {
   property: Property | null;
@@ -42,7 +47,9 @@ export function PropertyDetailModal({
           <div className="grid grid-cols-3 gap-3">
             <div className="p-3 bg-gray-100 rounded text-center">
               <p className="text-xs text-gray-600">면적</p>
-              <p className="font-bold text-black">{formatArea(property.area)}</p>
+              <p className="font-bold text-black">
+                {formatArea(property.area)}
+              </p>
             </div>
             <div className="p-3 bg-gray-100 rounded text-center">
               <p className="text-xs text-gray-600">방</p>
@@ -59,7 +66,9 @@ export function PropertyDetailModal({
             <MapPin className="w-5 h-5 text-black flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-xs text-gray-600">주소</p>
-              <p className="font-semibold text-black text-sm">{property.address}</p>
+              <p className="font-semibold text-black text-sm">
+                {property.address}
+              </p>
             </div>
           </div>
 
@@ -88,8 +97,12 @@ export function PropertyDetailModal({
 
           {/* 연락처 정보 */}
           <div className="pt-4 border-t border-gray-200">
-            <p className="font-semibold text-black mb-2">{property.contact.name}</p>
-            <p className="text-sm text-gray-600 mb-4">{formatPhone(property.contact.phone)}</p>
+            <p className="font-semibold text-black mb-2">
+              {property.contact.name}
+            </p>
+            <p className="text-sm text-gray-600 mb-4">
+              {formatPhone(property.contact.phone)}
+            </p>
             <Button
               className="w-full bg-black hover:bg-gray-800 text-white"
               onClick={() => {

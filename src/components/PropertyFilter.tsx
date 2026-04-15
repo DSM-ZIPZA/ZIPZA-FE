@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import type { FilterState } from '@shared/types';
-import { PRICE_RANGES, AREA_RANGES, PROPERTY_TYPES } from '@shared/const';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Search, X } from 'lucide-react';
+import { useState } from "react";
+import type { FilterState } from "@/shared/types";
+import { PRICE_RANGES, AREA_RANGES, PROPERTY_TYPES } from "@/shared/const";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Search, X } from "lucide-react";
 
 interface PropertyFilterProps {
   onFilterChange: (filters: FilterState) => void;
@@ -21,8 +21,8 @@ export function PropertyFilter({
       areaMin: 0,
       areaMax: 300,
       types: Object.values(PROPERTY_TYPES),
-      transactionType: 'sale',
-      searchQuery: '',
+      transactionType: "sale",
+      searchQuery: "",
     }
   );
 
@@ -42,7 +42,7 @@ export function PropertyFilter({
 
   const handleTypeToggle = (type: string) => {
     const newTypes = filters.types.includes(type as any)
-      ? filters.types.filter((t) => t !== type)
+      ? filters.types.filter(t => t !== type)
       : [...filters.types, type as any];
     const newFilters = { ...filters, types: newTypes };
     setFilters(newFilters);
@@ -62,8 +62,8 @@ export function PropertyFilter({
       areaMin: 0,
       areaMax: 300,
       types: Object.values(PROPERTY_TYPES),
-      transactionType: 'sale',
-      searchQuery: '',
+      transactionType: "sale",
+      searchQuery: "",
     };
     setFilters(defaultFilters);
     onFilterChange(defaultFilters);
@@ -77,8 +77,8 @@ export function PropertyFilter({
         <Input
           type="text"
           placeholder="매물명, 주소로 검색..."
-          value={filters.searchQuery || ''}
-          onChange={(e) => handleSearchChange(e.target.value)}
+          value={filters.searchQuery || ""}
+          onChange={e => handleSearchChange(e.target.value)}
           className="pl-10"
         />
       </div>
@@ -89,7 +89,7 @@ export function PropertyFilter({
         className="w-full flex items-center justify-between px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
       >
         <span className="font-semibold text-blue-900">필터 옵션</span>
-        <span className="text-sm text-blue-700">{isOpen ? '▼' : '▶'}</span>
+        <span className="text-sm text-blue-700">{isOpen ? "▼" : "▶"}</span>
       </button>
 
       {/* 필터 패널 */}
@@ -104,9 +104,10 @@ export function PropertyFilter({
                   key={idx}
                   onClick={() => handlePriceRangeClick(range.min, range.max)}
                   className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
-                    filters.priceMin === range.min && filters.priceMax === range.max
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white border border-gray-300 text-gray-700 hover:border-blue-400'
+                    filters.priceMin === range.min &&
+                    filters.priceMax === range.max
+                      ? "bg-blue-600 text-white"
+                      : "bg-white border border-gray-300 text-gray-700 hover:border-blue-400"
                   }`}
                 >
                   {range.label}
@@ -124,9 +125,10 @@ export function PropertyFilter({
                   key={idx}
                   onClick={() => handleAreaRangeClick(range.min, range.max)}
                   className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
-                    filters.areaMin === range.min && filters.areaMax === range.max
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white border border-gray-300 text-gray-700 hover:border-blue-400'
+                    filters.areaMin === range.min &&
+                    filters.areaMax === range.max
+                      ? "bg-blue-600 text-white"
+                      : "bg-white border border-gray-300 text-gray-700 hover:border-blue-400"
                   }`}
                 >
                   {range.label}
@@ -137,10 +139,15 @@ export function PropertyFilter({
 
           {/* 매물 타입 */}
           <div>
-            <h3 className="font-semibold text-sm text-gray-900 mb-2">매물 타입</h3>
+            <h3 className="font-semibold text-sm text-gray-900 mb-2">
+              매물 타입
+            </h3>
             <div className="space-y-2">
               {Object.entries(PROPERTY_TYPES).map(([key, value]) => (
-                <label key={value} className="flex items-center gap-2 cursor-pointer">
+                <label
+                  key={value}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
                   <input
                     type="checkbox"
                     checked={filters.types.includes(value)}
@@ -148,7 +155,11 @@ export function PropertyFilter({
                     className="w-4 h-4 rounded border-gray-300"
                   />
                   <span className="text-sm text-gray-700">
-                    {value === 'apartment' ? '아파트' : value === 'villa' ? '빌라' : '타운하우스'}
+                    {value === "apartment"
+                      ? "아파트"
+                      : value === "villa"
+                        ? "빌라"
+                        : "타운하우스"}
                   </span>
                 </label>
               ))}
@@ -156,11 +167,7 @@ export function PropertyFilter({
           </div>
 
           {/* 초기화 버튼 */}
-          <Button
-            onClick={handleReset}
-            variant="outline"
-            className="w-full"
-          >
+          <Button onClick={handleReset} variant="outline" className="w-full">
             <X className="w-4 h-4 mr-2" />
             필터 초기화
           </Button>

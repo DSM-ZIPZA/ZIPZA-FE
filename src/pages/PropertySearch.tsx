@@ -1,14 +1,16 @@
-import { useState, useEffect } from 'react';
-import type { Property, FilterState, MapState } from '@shared/types';
-import { generateMockProperties, filterProperties } from '@shared/lib/mock-data';
-import { DEFAULT_LOCATION } from '@shared/const';
-import { PropertyCard } from '@/components/PropertyCard';
-import { SearchBar } from '@/components/SearchBar';
-import { NaverMapView } from '@/components/NaverMapView';
-import { PropertyDetailModal } from '@/components/PropertyDetailModal';
-import { Header } from '@/components/Header';
-import { EmptyState } from '@/components/EmptyState';
-
+import { useState, useEffect } from "react";
+import type { Property, FilterState, MapState } from "@/shared/types";
+import {
+  generateMockProperties,
+  filterProperties,
+} from "@/shared/lib/mock-data";
+import { DEFAULT_LOCATION } from "@/shared/const";
+import { PropertyCard } from "@/components/PropertyCard";
+import { SearchBar } from "@/components/SearchBar";
+import { NaverMapView } from "@/components/NaverMapView";
+import { PropertyDetailModal } from "@/components/PropertyDetailModal";
+import { Header } from "@/shared/ui/Header";
+import { EmptyState } from "@/components/EmptyState";
 
 export default function PropertySearch() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -18,20 +20,28 @@ export default function PropertySearch() {
     priceMax: 1000000000,
     areaMin: 0,
     areaMax: 300,
-    types: ['apartment', 'villa', 'townhouse'],
-    transactionType: 'sale',
+    types: ["apartment", "villa", "townhouse"],
+    transactionType: "sale",
   });
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string | undefined>();
+  const [selectedPropertyId, setSelectedPropertyId] = useState<
+    string | undefined
+  >();
   const [mapState, setMapState] = useState<MapState>({
     center: { lat: DEFAULT_LOCATION.lat, lng: DEFAULT_LOCATION.lng },
     zoom: DEFAULT_LOCATION.zoom,
   });
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [hoveredPropertyId, setHoveredPropertyId] = useState<string | undefined>();
+  const [hoveredPropertyId, setHoveredPropertyId] = useState<
+    string | undefined
+  >();
   const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const selectedProperty = properties.find((p) => p.id === selectedPropertyId);
-  const [transactionType, setTransactionType] = useState<'sale' | 'rent' | 'lease'>('sale');
-  const [sortType, setSortType] = useState<'nearby' | 'price-low' | 'price-high'>('nearby');
+  const selectedProperty = properties.find(p => p.id === selectedPropertyId);
+  const [transactionType, setTransactionType] = useState<
+    "sale" | "rent" | "lease"
+  >("sale");
+  const [sortType, setSortType] = useState<
+    "nearby" | "price-low" | "price-high"
+  >("nearby");
 
   // 초기 데이터 로드
   useEffect(() => {
@@ -48,9 +58,9 @@ export default function PropertySearch() {
     });
 
     // 정렬 적용
-    if (sortType === 'price-low') {
+    if (sortType === "price-low") {
       filtered = [...filtered].sort((a, b) => a.price - b.price);
-    } else if (sortType === 'price-high') {
+    } else if (sortType === "price-high") {
       filtered = [...filtered].sort((a, b) => b.price - a.price);
     }
     // 'nearby'는 기본 순서 유지
@@ -91,17 +101,17 @@ export default function PropertySearch() {
         <div className="w-full md:w-96 flex flex-col bg-white border-r border-gray-200 overflow-hidden">
           {/* 검색바 */}
           <SearchBar
-            onLocationChange={(location) => {
+            onLocationChange={location => {
               // 위치 변경 시 필터링 로직 추가 가능
             }}
-            onSortChange={(sort) => setSortType(sort)}
+            onSortChange={sort => setSortType(sort)}
           />
 
           {/* 매물 목록 */}
           <div className="flex-1 overflow-y-auto">
             {filteredProperties.length > 0 ? (
               <div className="divide-y divide-gray-200">
-                {filteredProperties.map((property) => (
+                {filteredProperties.map(property => (
                   <div
                     key={property.id}
                     onClick={() => handlePropertySelect(property)}

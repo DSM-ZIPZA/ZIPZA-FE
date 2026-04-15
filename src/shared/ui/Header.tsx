@@ -1,7 +1,6 @@
-import { useState } from 'react';
-import type { TransactionType } from '@shared/types';
-import { TRANSACTION_TYPES } from '@shared/const';
-
+import { useState } from "react";
+import type { TransactionType } from "@/shared/types";
+import { TRANSACTION_TYPES } from "@/shared/const";
 
 const TRANSACTION_TYPES_CONST = TRANSACTION_TYPES;
 
@@ -17,9 +16,9 @@ export function Header({
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const tabs: Array<{ key: TransactionType; label: string }> = [
-    { key: TRANSACTION_TYPES.SALE, label: '매매' },
-    { key: TRANSACTION_TYPES.RENT, label: '월세' },
-    { key: TRANSACTION_TYPES.LEASE, label: '전세' },
+    { key: TRANSACTION_TYPES.SALE, label: "매매" },
+    { key: TRANSACTION_TYPES.RENT, label: "월세" },
+    { key: TRANSACTION_TYPES.LEASE, label: "전세" },
   ];
 
   return (
@@ -34,14 +33,14 @@ export function Header({
 
           {/* 탭 */}
           <nav className="hidden md:flex items-center gap-8">
-            {tabs.map((tab) => (
+            {tabs.map(tab => (
               <button
                 key={tab.key}
                 onClick={() => onTransactionTypeChange(tab.key)}
                 className={`text-base font-medium transition-colors pb-2 ${
                   transactionType === tab.key
-                    ? 'text-black font-bold'
-                    : 'text-gray-600 hover:text-black'
+                    ? "text-black font-bold"
+                    : "text-gray-600 hover:text-black"
                 }`}
               >
                 {tab.label}
@@ -81,14 +80,14 @@ export function Header({
 
       {/* 모바일 탭 */}
       <div className="md:hidden flex border-t border-gray-200">
-        {tabs.map((tab) => (
+        {tabs.map(tab => (
           <button
             key={tab.key}
             onClick={() => onTransactionTypeChange(tab.key)}
             className={`flex-1 py-3 text-sm font-medium transition-colors border-b-2 ${
               transactionType === tab.key
-                ? 'text-black border-black'
-                : 'text-gray-600 border-transparent'
+                ? "text-black border-black"
+                : "text-gray-600 border-transparent"
             }`}
           >
             {tab.label}
