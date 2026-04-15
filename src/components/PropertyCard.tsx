@@ -38,7 +38,7 @@ export function PropertyCard({
       </div>
 
       {/* 우측: 가격 */}
-      <div className="flex-shrink-0 text-right">
+      <div className="shrink-0 text-right">
         <p className="font-bold text-base text-black">
           {formatPrice(property.price)}
         </p>

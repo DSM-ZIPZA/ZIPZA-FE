@@ -27,7 +27,7 @@ export function Header({
         {/* 좌측: 로고 + 탭 */}
         <div className="flex items-center gap-12">
           {/* 로고 */}
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <h1 className="text-2xl font-bold text-black">ZIPZA</h1>
           </div>
 

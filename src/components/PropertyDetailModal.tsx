@@ -63,7 +63,7 @@ export function PropertyDetailModal({
 
           {/* 주소 */}
           <div className="flex gap-2 p-3 bg-gray-100 rounded">
-            <MapPin className="w-5 h-5 text-black flex-shrink-0 mt-0.5" />
+            <MapPin className="w-5 h-5 text-black shrink-0 mt-0.5" />
             <div>
               <p className="text-xs text-gray-600">주소</p>
               <p className="font-semibold text-black text-sm">
