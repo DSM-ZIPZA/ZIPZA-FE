@@ -7,7 +7,7 @@ import {
 import { DEFAULT_LOCATION } from "@/shared/const";
 import { PropertyCard } from "@/components/PropertyCard";
 import { SearchBar } from "@/components/SearchBar";
-import { NaverMapView } from "@/components/NaverMapView";
+import { NaverMapView } from "@/components/map/NaverMapView";
 import { Header } from "@/shared/ui/Header";
 import { EmptyState } from "@/components/EmptyState";
 import { PropertyAnalysisDrawer } from "@/components/analysis/PropertyAnalysisDrawer";
@@ -85,6 +85,11 @@ export default function PropertySearch() {
         <div className="w-full md:w-96 flex flex-col bg-white border-r border-gray-200 overflow-hidden">
           <SearchBar
             onLocationChange={() => {}}
+            onAddressSelect={addr => {
+              const lat = parseFloat(addr.y);
+              const lng = parseFloat(addr.x);
+              setMapState({ center: { lat, lng }, zoom: 16 });
+            }}
             onSortChange={sort => setSortType(sort)}
           />
           <div className="flex-1 overflow-y-auto">
