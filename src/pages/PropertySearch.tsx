@@ -7,7 +7,7 @@ import {
 import { DEFAULT_LOCATION } from "@/shared/const";
 import { PropertyCard } from "@/components/PropertyCard";
 import { SearchBar } from "@/components/search/SearchBar";
-import { NaverMapView } from "@/components/map/NaverMapView";
+import { KakaoMapView } from "@/components/map/KakaoMapView";
 import { Header } from "@/shared/ui/Header";
 import { EmptyState } from "@/components/search/EmptyState";
 import { PropertyAnalysisDrawer } from "@/components/analysis/PropertyAnalysisDrawer";
@@ -89,7 +89,7 @@ export default function PropertySearch() {
             onAddressSelect={addr => {
               const lat = parseFloat(addr.lat);
               const lng = parseFloat(addr.lon);
-              setMapState({ center: { lat, lng }, zoom: 16 });
+              setMapState({ center: { lat, lng }, zoom: 5 });
             }}
             onSortChange={sort => setSortType(sort)}
           />
@@ -130,7 +130,7 @@ export default function PropertySearch() {
         </div>
 
         <div className="hidden md:flex flex-1 bg-gray-100">
-          <NaverMapView
+          <KakaoMapView
             center={mapState.center}
             zoom={mapState.zoom}
             properties={filteredProperties}
