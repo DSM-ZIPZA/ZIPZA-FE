@@ -1,178 +1,212 @@
 import { useState } from "react";
 import type { FilterState } from "@/shared/types";
-import { PRICE_RANGES, AREA_RANGES, PROPERTY_TYPES } from "@/shared/const";
-import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
-import { Search, X } from "lucide-react";
+import { X } from "lucide-react";
 
 interface PropertyFilterProps {
+  filters: FilterState;
   onFilterChange: (filters: FilterState) => void;
-  initialFilters?: FilterState;
+  sortType: "nearby" | "price-low" | "price-high";
+  onSortChange: (sort: "nearby" | "price-low" | "price-high") => void;
+}
+
+const sortLabels = {
+  nearby: "주변매물",
+  "price-low": "월세 낮은순",
+  "price-high": "월세 높은순",
+};
+
+function formatPrice(value: string): string {
+  const num = value.replace(/[^0-9]/g, "");
+  if (!num) return "";
+  return Number(num).toLocaleString("ko-KR");
 }
 
 export function PropertyFilter({
+  filters,
   onFilterChange,
-  initialFilters,
+  sortType,
+  onSortChange,
 }: PropertyFilterProps) {
-  const [filters, setFilters] = useState<FilterState>(
-    initialFilters || {
-      priceMin: 0,
-      priceMax: 1000000000,
-      areaMin: 0,
-      areaMax: 300,
-      types: Object.values(PROPERTY_TYPES),
-      transactionType: "sale",
-      searchQuery: "",
-    }
-  );
+  const [sortOpen, setSortOpen] = useState(false);
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [depositMin, setDepositMin] = useState("");
+  const [depositMax, setDepositMax] = useState("");
+  const [rentMin, setRentMin] = useState("");
+  const [rentMax, setRentMax] = useState("");
 
-  const handlePriceRangeClick = (min: number, max: number) => {
-    const newFilters = { ...filters, priceMin: min, priceMax: max };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
-  };
+  const handlePriceInput = (
+    field: "depositMin" | "depositMax" | "rentMin" | "rentMax",
+    raw: string
+  ) => {
+    const num = raw.replace(/[^0-9]/g, "");
+    const formatted = num ? Number(num).toLocaleString("ko-KR") : "";
 
-  const handleAreaRangeClick = (min: number, max: number) => {
-    const newFilters = { ...filters, areaMin: min, areaMax: max };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
-  };
+    if (field === "depositMin") setDepositMin(formatted);
+    if (field === "depositMax") setDepositMax(formatted);
+    if (field === "rentMin") setRentMin(formatted);
+    if (field === "rentMax") setRentMax(formatted);
 
-  const handleTypeToggle = (type: string) => {
-    const newTypes = filters.types.includes(type as any)
-      ? filters.types.filter(t => t !== type)
-      : [...filters.types, type as any];
-    const newFilters = { ...filters, types: newTypes };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
-  };
+    const toWon = (s: string) =>
+      s ? Number(s.replace(/,/g, "")) * 10000 : undefined;
 
-  const handleSearchChange = (query: string) => {
-    const newFilters = { ...filters, searchQuery: query };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
+    onFilterChange({
+      ...filters,
+      depositMin: field === "depositMin" ? toWon(formatted) : toWon(depositMin),
+      depositMax: field === "depositMax" ? toWon(formatted) : toWon(depositMax),
+      rentMin: field === "rentMin" ? toWon(formatted) : toWon(rentMin),
+      rentMax: field === "rentMax" ? toWon(formatted) : toWon(rentMax),
+    });
   };
 
   const handleReset = () => {
-    const defaultFilters: FilterState = {
-      priceMin: 0,
-      priceMax: 1000000000,
-      areaMin: 0,
-      areaMax: 300,
-      types: Object.values(PROPERTY_TYPES),
-      transactionType: "sale",
-      searchQuery: "",
-    };
-    setFilters(defaultFilters);
-    onFilterChange(defaultFilters);
+    setDepositMin("");
+    setDepositMax("");
+    setRentMin("");
+    setRentMax("");
+    onFilterChange({
+      ...filters,
+      depositMin: undefined,
+      depositMax: undefined,
+      rentMin: undefined,
+      rentMax: undefined,
+    });
   };
 
+  const hasActiveFilter = depositMin || depositMax || rentMin || rentMax;
+
   return (
-    <div className="space-y-4">
-      {/* 검색창 */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <Input
-          type="text"
-          placeholder="매물명, 주소로 검색..."
-          value={filters.searchQuery || ""}
-          onChange={e => handleSearchChange(e.target.value)}
-          className="pl-10"
-        />
+    <div className="border-b border-gray-200 bg-slate-100">
+      <div className="flex items-center justify-between px-4 py-3">
+        <span className="text-sm font-semibold text-gray-900">주변 매물</span>
+        <div className="relative">
+          <button
+            onClick={() => setSortOpen(!sortOpen)}
+            className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
+          >
+            <span>{sortLabels[sortType]}</span>
+            <svg
+              className={`w-3.5 h-3.5 transition-transform ${sortOpen ? "rotate-180" : ""}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 15l7-7 7 7"
+              />
+            </svg>
+          </button>
+          {sortOpen && (
+            <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 w-36">
+              {(["nearby", "price-low", "price-high"] as const).map((s, i) => (
+                <button
+                  key={s}
+                  onClick={() => {
+                    onSortChange(s);
+                    setSortOpen(false);
+                  }}
+                  className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-gray-50
+                    ${i > 0 ? "border-t border-gray-100" : ""}
+                    ${sortType === s ? "font-semibold text-black" : "text-gray-700"}`}
+                >
+                  {sortLabels[s]}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* 필터 토글 버튼 */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
-      >
-        <span className="font-semibold text-blue-900">필터 옵션</span>
-        <span className="text-sm text-blue-700">{isOpen ? "▼" : "▶"}</span>
-      </button>
-
-      {/* 필터 패널 */}
-      {isOpen && (
-        <div className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          {/* 가격 범위 */}
-          <div>
-            <h3 className="font-semibold text-sm text-gray-900 mb-2">가격대</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {PRICE_RANGES.map((range, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handlePriceRangeClick(range.min, range.max)}
-                  className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
-                    filters.priceMin === range.min &&
-                    filters.priceMax === range.max
-                      ? "bg-blue-600 text-white"
-                      : "bg-white border border-gray-300 text-gray-700 hover:border-blue-400"
-                  }`}
-                >
-                  {range.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 면적 범위 */}
-          <div>
-            <h3 className="font-semibold text-sm text-gray-900 mb-2">면적</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {AREA_RANGES.map((range, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleAreaRangeClick(range.min, range.max)}
-                  className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
-                    filters.areaMin === range.min &&
-                    filters.areaMax === range.max
-                      ? "bg-blue-600 text-white"
-                      : "bg-white border border-gray-300 text-gray-700 hover:border-blue-400"
-                  }`}
-                >
-                  {range.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 매물 타입 */}
-          <div>
-            <h3 className="font-semibold text-sm text-gray-900 mb-2">
-              매물 타입
-            </h3>
-            <div className="space-y-2">
-              {Object.entries(PROPERTY_TYPES).map(([key, value]) => (
-                <label
-                  key={value}
-                  className="flex items-center gap-2 cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={filters.types.includes(value)}
-                    onChange={() => handleTypeToggle(value)}
-                    className="w-4 h-4 rounded border-gray-300"
-                  />
-                  <span className="text-sm text-gray-700">
-                    {value === "apartment"
-                      ? "아파트"
-                      : value === "villa"
-                        ? "빌라"
-                        : "타운하우스"}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* 초기화 버튼 */}
-          <Button onClick={handleReset} variant="outline" className="w-full">
-            <X className="w-4 h-4 mr-2" />
-            필터 초기화
-          </Button>
+      <div className="px-4 pb-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            필터를 설정해주세요.
+          </span>
+          {hasActiveFilter && (
+            <button
+              onClick={handleReset}
+              className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-3 h-3" />
+              초기화
+            </button>
+          )}
         </div>
-      )}
+
+        <div>
+          <p className="text-xs text-gray-500 mb-1.5">보증금</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="relative">
+              <input
+                type="text"
+                inputMode="numeric"
+                value={depositMin}
+                onChange={e => handlePriceInput("depositMin", e.target.value)}
+                placeholder="최소"
+                className="w-full px-3 py-2 text-sm border bg-white border-gray-200 rounded-lg focus:outline-none focus:border-black placeholder:text-gray-300"
+              />
+              {depositMin && (
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">
+                  만원
+                </span>
+              )}
+            </div>
+            <div className="relative">
+              <input
+                type="text"
+                inputMode="numeric"
+                value={depositMax}
+                onChange={e => handlePriceInput("depositMax", e.target.value)}
+                placeholder="최대"
+                className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-black placeholder:text-gray-300"
+              />
+              {depositMax && (
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">
+                  만원
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs text-gray-500 mb-1.5">월세</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="relative">
+              <input
+                type="text"
+                inputMode="numeric"
+                value={rentMin}
+                onChange={e => handlePriceInput("rentMin", e.target.value)}
+                placeholder="최소"
+                className="w-full px-3 py-2 text-sm border bg-white border-gray-200 rounded-lg focus:outline-none focus:border-black placeholder:text-gray-300"
+              />
+              {rentMin && (
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">
+                  만원
+                </span>
+              )}
+            </div>
+            <div className="relative">
+              <input
+                type="text"
+                inputMode="numeric"
+                value={rentMax}
+                onChange={e => handlePriceInput("rentMax", e.target.value)}
+                placeholder="최대"
+                className="w-full px-3 py-2 text-sm border bg-white border-gray-200 rounded-lg focus:outline-none focus:border-black placeholder:text-gray-300"
+              />
+              {rentMax && (
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">
+                  만원
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
