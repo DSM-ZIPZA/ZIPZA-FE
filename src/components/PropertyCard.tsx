@@ -25,7 +25,6 @@ export function PropertyCard({
         isSelected && "bg-gray-200"
       )}
     >
-      {/* 좌측: 매물 정보 */}
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2 mb-1">
           <h3 className="font-bold text-base text-black">{property.title}</h3>
@@ -37,7 +36,6 @@ export function PropertyCard({
         <p className="text-xs text-gray-600">보증금 조정가능 베스트 추천</p>
       </div>
 
-      {/* 우측: 가격 */}
       <div className="shrink-0 text-right">
         <p className="font-bold text-base text-black">
           {formatPrice(property.price)}
