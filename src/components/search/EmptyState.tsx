@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react';
+import { Search } from "lucide-react";
 
 interface EmptyStateProps {
   title?: string;
@@ -7,8 +7,8 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({
-  title = '검색 결과가 없습니다',
-  description = '필터 조건을 변경해보세요.',
+  title = "검색 결과가 없습니다",
+  description = "필터 조건을 변경해보세요.",
   icon,
 }: EmptyStateProps) {
   return (

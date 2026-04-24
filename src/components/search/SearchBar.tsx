@@ -4,8 +4,8 @@ import { ChevronDown, Search, X, MapPin, Loader2 } from "lucide-react";
 interface NaverAddress {
   roadAddress: string;
   jibunAddress: string;
-  x: string; // 경도
-  y: string; // 위도
+  lat: string;
+  lon: string;
 }
 
 interface SearchBarProps {
@@ -63,7 +63,6 @@ export function SearchBar({
     const fetchAddresses = async () => {
       setIsLoading(true);
       try {
-        // vite 프록시 통해서 호출 → 실제론 naveropenapi.apigw.ntruss.com 로 감
         const res = await fetch(
           `/api/geocode?query=${encodeURIComponent(debouncedQuery)}`
         );
@@ -134,7 +133,6 @@ export function SearchBar({
 
   return (
     <div className="p-4 border-b border-gray-200 space-y-3" ref={containerRef}>
-      {/* 주소 검색 입력 */}
       <div className="relative">
         <div className="relative flex items-center">
           <Search className="absolute left-3 w-4 h-4 text-gray-400 pointer-events-none" />
@@ -158,7 +156,6 @@ export function SearchBar({
           ) : null}
         </div>
 
-        {/* 자동완성 드롭다운 */}
         {isOpen && suggestions.length > 0 && (
           <ul className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 max-h-72 overflow-y-auto">
             {suggestions.map((addr, i) => (
@@ -196,7 +193,6 @@ export function SearchBar({
           </ul>
         )}
 
-        {/* 결과 없음 */}
         {isOpen &&
           !isLoading &&
           suggestions.length === 0 &&
@@ -207,7 +203,6 @@ export function SearchBar({
           )}
       </div>
 
-      {/* 정렬 드롭다운 */}
       <div className="relative">
         <button
           onClick={() => setSortOpen(!sortOpen)}
