@@ -1,6 +1,7 @@
 import type { Property } from "@/shared/types";
 import { formatPrice, formatArea } from "@/shared/lib/format";
-import { cn } from "@/lib/utils";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 interface PropertyCardProps {
   property: Property;
@@ -20,9 +21,11 @@ export function PropertyCard({
       onClick={onClick}
       onMouseEnter={() => onHover?.(true)}
       onMouseLeave={() => onHover?.(false)}
-      className={cn(
-        "flex items-start justify-between gap-4 py-4 px-4 border-b border-gray-300 transition-all duration-200 cursor-pointer hover:bg-gray-100",
-        isSelected && "bg-gray-200"
+      className={twMerge(
+        clsx(
+          "flex items-start justify-between gap-4 py-4 px-4 border-b border-gray-300 transition-all duration-200 cursor-pointer hover:bg-gray-100",
+          isSelected && "bg-gray-200"
+        )
       )}
     >
       <div className="flex-1 min-w-0">
