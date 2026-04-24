@@ -44,6 +44,10 @@ export interface FilterState {
   types: PropertyType[];
   transactionType: TransactionType;
   searchQuery?: string;
+  depositMin?: number;
+  depositMax?: number;
+  rentMin?: number;
+  rentMax?: number;
 }
 
 export interface MapState {

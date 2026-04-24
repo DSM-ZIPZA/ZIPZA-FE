@@ -6,11 +6,12 @@ import {
 } from "@/shared/lib/mock-data";
 import { DEFAULT_LOCATION } from "@/shared/const";
 import { PropertyCard } from "@/components/PropertyCard";
-import { SearchBar } from "@/components/SearchBar";
+import { SearchBar } from "@/components/search/SearchBar";
 import { NaverMapView } from "@/components/map/NaverMapView";
 import { Header } from "@/shared/ui/Header";
-import { EmptyState } from "@/components/EmptyState";
+import { EmptyState } from "@/components/search/EmptyState";
 import { PropertyAnalysisDrawer } from "@/components/analysis/PropertyAnalysisDrawer";
+import { PropertyFilter } from "@/components/PropertyFilter";
 
 export default function PropertySearch() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -67,7 +68,7 @@ export default function PropertySearch() {
       center: { lat: property.latitude, lng: property.longitude },
       zoom: 17,
     });
-    setDrawerOpen(true); // ← 변경
+    setDrawerOpen(true);
   };
 
   const handlePropertyHover = (propertyId: string, isHovering: boolean) => {
@@ -86,12 +87,20 @@ export default function PropertySearch() {
           <SearchBar
             onLocationChange={() => {}}
             onAddressSelect={addr => {
-              const lat = parseFloat(addr.y);
-              const lng = parseFloat(addr.x);
+              const lat = parseFloat(addr.lat);
+              const lng = parseFloat(addr.lon);
               setMapState({ center: { lat, lng }, zoom: 16 });
             }}
             onSortChange={sort => setSortType(sort)}
           />
+
+          <PropertyFilter
+            filters={filters}
+            onFilterChange={setFilters}
+            sortType={sortType}
+            onSortChange={setSortType}
+          />
+
           <div className="flex-1 overflow-y-auto">
             {filteredProperties.length > 0 ? (
               <div className="divide-y divide-gray-200">
@@ -133,7 +142,6 @@ export default function PropertySearch() {
         </div>
       </div>
 
-      {/* 드로어 — 기존 모달 대체 */}
       <PropertyAnalysisDrawer
         property={selectedProperty}
         isOpen={drawerOpen}
