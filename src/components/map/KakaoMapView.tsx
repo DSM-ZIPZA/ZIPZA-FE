@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { Property } from "@/shared/types";
 import { usePersistFn } from "@/hooks/usePersistFn";
-import { cn } from "@/lib/utils";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 declare global {
   interface Window {
@@ -172,7 +173,7 @@ export function KakaoMapView({
   return (
     <div
       ref={mapContainer}
-      className={cn("w-full h-full bg-gray-100", className)}
+      className={twMerge(clsx("w-full h-full bg-gray-100", className))}
     />
   );
 }
