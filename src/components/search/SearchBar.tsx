@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, Search, X, MapPin, Loader2 } from "lucide-react";
+import { Search, X, MapPin, Loader2 } from "lucide-react";
 
-interface NaverAddress {
+interface KakaoAddress {
   roadAddress: string;
   jibunAddress: string;
   lat: string;
@@ -10,12 +10,12 @@ interface NaverAddress {
 
 interface SearchBarProps {
   onLocationChange?: (location: string) => void;
-  onAddressSelect?: (address: NaverAddress) => void;
+  onAddressSelect?: (address: KakaoAddress) => void;
   onSortChange?: (sort: "nearby" | "price-low" | "price-high") => void;
 }
 
 function useDebounce<T>(value: T, delay: number): T {
-  const [debounced, setDebounced] = useState(value);
+  const [debounced, setDebounced] = useState<T>(value);
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(value), delay);
     return () => clearTimeout(timer);
@@ -26,16 +26,13 @@ function useDebounce<T>(value: T, delay: number): T {
 export function SearchBar({
   onLocationChange,
   onAddressSelect,
-  onSortChange,
 }: SearchBarProps) {
+  const skipNextSearchRef = useRef(false);
   const [query, setQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<NaverAddress[]>([]);
+  const [suggestions, setSuggestions] = useState<KakaoAddress[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [sortOpen, setSortOpen] = useState(false);
-  const [selectedSort, setSelectedSort] = useState<
-    "nearby" | "price-low" | "price-high"
-  >("nearby");
+
   const debouncedQuery = useDebounce(query, 300);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -46,7 +43,6 @@ export function SearchBar({
         !containerRef.current.contains(e.target as Node)
       ) {
         setIsOpen(false);
-        setSortOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -54,6 +50,11 @@ export function SearchBar({
   }, []);
 
   useEffect(() => {
+    if (skipNextSearchRef.current) {
+      skipNextSearchRef.current = false;
+      return;
+    }
+
     if (!debouncedQuery.trim() || debouncedQuery.length < 2) {
       setSuggestions([]);
       setIsOpen(false);
@@ -67,7 +68,17 @@ export function SearchBar({
           `/api/geocode?query=${encodeURIComponent(debouncedQuery)}`
         );
         const data = await res.json();
-        setSuggestions(data.addresses ?? []);
+
+        const addresses: KakaoAddress[] = (data.documents ?? []).map(
+          (doc: any) => ({
+            roadAddress: doc.road_address_name ?? "",
+            jibunAddress: doc.address_name ?? "",
+            lat: doc.y,
+            lon: doc.x,
+          })
+        );
+
+        setSuggestions(addresses);
         setIsOpen(true);
       } catch (err) {
         console.error("주소 검색 실패:", err);
@@ -79,11 +90,15 @@ export function SearchBar({
     fetchAddresses();
   }, [debouncedQuery]);
 
-  const handleSelect = (address: NaverAddress) => {
+  const handleSelect = (address: KakaoAddress) => {
     const display = address.roadAddress || address.jibunAddress;
+
+    skipNextSearchRef.current = true;
+
     setQuery(display);
     setSuggestions([]);
     setIsOpen(false);
+
     onLocationChange?.(display);
     onAddressSelect?.(address);
   };
@@ -93,18 +108,6 @@ export function SearchBar({
     setSuggestions([]);
     setIsOpen(false);
     onLocationChange?.("");
-  };
-
-  const handleSortChange = (sort: "nearby" | "price-low" | "price-high") => {
-    setSelectedSort(sort);
-    setSortOpen(false);
-    onSortChange?.(sort);
-  };
-
-  const sortLabels = {
-    nearby: "주변매물",
-    "price-low": "월세 낮은순",
-    "price-high": "월세 높은순",
   };
 
   const highlight = (text: string, keyword: string) => {
@@ -131,6 +134,7 @@ export function SearchBar({
     );
   };
 
+  // 이하 JSX는 기존과 동일
   return (
     <div className="p-4 border-b border-gray-200 space-y-3" ref={containerRef}>
       <div className="relative">
@@ -141,6 +145,11 @@ export function SearchBar({
             value={query}
             onChange={e => setQuery(e.target.value)}
             onFocus={() => suggestions.length > 0 && setIsOpen(true)}
+            onKeyDown={e => {
+              if (e.key === "Escape") {
+                setIsOpen(false);
+              }
+            }}
             placeholder="도로명, 지번, 건물명으로 검색"
             className="w-full pl-9 pr-9 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-black transition-colors"
           />
@@ -201,33 +210,6 @@ export function SearchBar({
               '{debouncedQuery}' 검색 결과가 없습니다
             </div>
           )}
-      </div>
-
-      <div className="relative">
-        <button
-          onClick={() => setSortOpen(!sortOpen)}
-          className="w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors"
-        >
-          <span className="text-gray-700">{sortLabels[selectedSort]}</span>
-          <ChevronDown
-            className={`w-4 h-4 text-gray-600 transition-transform ${sortOpen ? "rotate-180" : ""}`}
-          />
-        </button>
-
-        {sortOpen && (
-          <ul className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10">
-            {(["nearby", "price-low", "price-high"] as const).map((sort, i) => (
-              <li key={sort}>
-                <button
-                  onClick={() => handleSortChange(sort)}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors ${i > 0 ? "border-t border-gray-200" : ""} ${selectedSort === sort ? "bg-gray-100 font-semibold" : ""}`}
-                >
-                  {sortLabels[sort]}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
     </div>
   );
