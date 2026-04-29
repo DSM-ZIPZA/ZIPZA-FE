@@ -69,7 +69,7 @@ export default function PropertySearch() {
     setSelectedPropertyId(property.id);
     setMapState({
       center: { lat: property.latitude, lng: property.longitude },
-      zoom: 17,
+      zoom: 5,
     });
     setDrawerOpen(true);
   };
