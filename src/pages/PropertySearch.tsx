@@ -12,8 +12,11 @@ import { Header } from "@/shared/ui/Header";
 import { EmptyState } from "@/components/search/EmptyState";
 import { PropertyAnalysisDrawer } from "@/components/analysis/PropertyAnalysisDrawer";
 import { PropertyFilter } from "@/components/PropertyFilter";
+import { LoginModal } from "@/shared/ui/LoginModal";
+import { useAuth } from "@/shared/contexts/AuthContext";
 
 export default function PropertySearch() {
+  const { user } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   const [filters, setFilters] = useState<FilterState>({
@@ -77,6 +80,7 @@ export default function PropertySearch() {
 
   return (
     <div className="flex flex-col h-screen bg-white">
+      {!user && <LoginModal />}
       <Header
         transactionType={transactionType}
         onTransactionTypeChange={setTransactionType}
