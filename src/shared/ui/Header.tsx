@@ -1,19 +1,26 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { TransactionType } from "@/shared/types";
 import { TRANSACTION_TYPES } from "@/shared/const";
-
-const TRANSACTION_TYPES_CONST = TRANSACTION_TYPES;
+import { useAuth } from "@/shared/contexts/AuthContext";
+import { ChevronDown, LogOut } from "lucide-react";
 
 interface HeaderProps {
   transactionType: TransactionType;
   onTransactionTypeChange: (type: TransactionType) => void;
 }
 
-export function Header({
-  transactionType,
-  onTransactionTypeChange,
-}: HeaderProps) {
+function UserAvatar({ name }: { name: string }) {
+  return (
+    <div className="w-7 h-7 rounded-full bg-[#FEE500] flex items-center justify-center text-black font-bold text-xs select-none">
+      {name.charAt(0)}
+    </div>
+  );
+}
+
+export function Header({ transactionType, onTransactionTypeChange }: HeaderProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const { user, logout } = useAuth();
 
   const tabs: Array<{ key: TransactionType; label: string }> = [
     { key: TRANSACTION_TYPES.SALE, label: "매매" },
@@ -21,17 +28,24 @@ export function Header({
     { key: TRANSACTION_TYPES.LEASE, label: "전세" },
   ];
 
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowUserMenu(false);
+      }
+    }
+    if (showUserMenu) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showUserMenu]);
+
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
       <div className="flex items-center justify-between px-6 py-4">
         {/* 좌측: 로고 + 탭 */}
         <div className="flex items-center gap-12">
-          {/* 로고 */}
           <div className="shrink-0">
             <h1 className="text-2xl font-bold text-black">ZIPZA</h1>
           </div>
-
-          {/* 탭 */}
           <nav className="hidden md:flex items-center gap-8">
             {tabs.map(tab => (
               <button
@@ -49,33 +63,43 @@ export function Header({
           </nav>
         </div>
 
-        {/* 우측: 마이페이지 */}
-        <div className="relative">
-          <button
-            onClick={() => setShowUserMenu(!showUserMenu)}
-            className="text-sm font-medium text-black hover:text-gray-700 transition-colors"
-          >
-            마이페이지
-          </button>
+        {/* 우측: 유저 메뉴 */}
+        {user && (
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setShowUserMenu(prev => !prev)}
+              className="flex items-center gap-2 text-sm font-medium text-gray-800 hover:text-black transition-colors"
+            >
+              <UserAvatar name={user.name} />
+              <span>{user.name}님</span>
+              <ChevronDown
+                size={14}
+                className={`text-gray-400 transition-transform ${showUserMenu ? "rotate-180" : ""}`}
+              />
+            </button>
 
-          {/* 사용자 메뉴 드롭다운 */}
-          {showUserMenu && (
-            <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-              <button className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700 border-b">
-                프로필
-              </button>
-              <button className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700 border-b">
-                찜한 매물
-              </button>
-              <button className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700 border-b">
-                최근 본 매물
-              </button>
-              <button className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
-                로그아웃
-              </button>
-            </div>
-          )}
-        </div>
+            {showUserMenu && (
+              <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                {/* 이메일 */}
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <p className="text-xs text-gray-400 mb-0.5">이메일</p>
+                  <p className="text-sm text-gray-700">{user.email}</p>
+                </div>
+                {/* 로그아웃 */}
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    logout();
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  <LogOut size={14} className="text-gray-400" />
+                  로그아웃
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 모바일 탭 */}
