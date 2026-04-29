@@ -177,33 +177,52 @@ export function CandlestickChart({ data }: Props) {
             </g>
           );
         })}
-        <line
-          x1={PL}
-          x2={W - PR}
-          y1={lastY}
-          y2={lastY}
-          stroke="#3182ce"
-          strokeWidth={0.8}
-          strokeDasharray="3 3"
-        />
-        <rect
-          x={W - PR + 2}
-          y={lastY - 9}
-          width={50}
-          height={16}
-          fill="#3182ce"
-          rx={3}
-        />
-        <text
-          x={W - PR + 27}
-          y={lastY + 3.5}
-          fontSize={9}
-          fill="#fff"
-          textAnchor="middle"
-          fontWeight="600"
-        >
-          {lastClose.toLocaleString()}
-        </text>
+        {(() => {
+          const activeData =
+            tooltip.visible && tooltip.data
+              ? tooltip.data
+              : data[data.length - 1];
+          const activeClose = activeData?.close ?? lastClose;
+          const activeY = toY(activeClose);
+          const isUp = activeData ? activeData.close >= activeData.open : true;
+          const lineColor =
+            tooltip.visible && tooltip.data
+              ? isUp
+                ? "#e53e3e"
+                : "#3182ce"
+              : "#3182ce";
+          return (
+            <>
+              <line
+                x1={PL}
+                x2={W - PR}
+                y1={activeY}
+                y2={activeY}
+                stroke={lineColor}
+                strokeWidth={0.8}
+                strokeDasharray="3 3"
+              />
+              <rect
+                x={W - PR + 2}
+                y={activeY - 9}
+                width={50}
+                height={16}
+                fill={lineColor}
+                rx={3}
+              />
+              <text
+                x={W - PR + 27}
+                y={activeY + 3.5}
+                fontSize={9}
+                fill="#fff"
+                textAnchor="middle"
+                fontWeight="600"
+              >
+                {activeClose.toLocaleString()}
+              </text>
+            </>
+          );
+        })()}
         {tooltip.visible && tooltip.index !== null && (
           <line
             x1={toX(tooltip.index)}
