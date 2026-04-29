@@ -4,6 +4,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./shared/ui/ErrorBoundary";
 import { ThemeProvider } from "@/shared/contexts/ThemeContext";
+import { AuthProvider } from "@/shared/contexts/AuthContext";
 import PropertySearch from "./pages/PropertySearch";
 
 function Router() {
@@ -20,10 +21,12 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light">
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );
