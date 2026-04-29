@@ -3,7 +3,7 @@ import { TooltipProvider } from "@/shared/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./shared/ui/ErrorBoundary";
-import { ThemeProvider } from "./contexts/ThemeContext";
+import { ThemeProvider } from "@/shared/contexts/ThemeContext";
 import PropertySearch from "./pages/PropertySearch";
 
 function Router() {
