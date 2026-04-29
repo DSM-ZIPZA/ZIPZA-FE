@@ -13,7 +13,10 @@ declare global {
 const KAKAO_APP_KEY = import.meta.env.VITE_KAKAO_APP_KEY;
 
 const SEOUL_CENTER = { lat: 37.5665, lng: 126.978 };
-const DEFAULT_ZOOM = 5; // 카카오 level 5 = 동네 수준
+const DEFAULT_ZOOM = 5;
+
+const SELECTED_MARKER_IMG =
+  "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
 
 function loadKakaoMapScript() {
   return new Promise<void>((resolve, reject) => {
@@ -51,7 +54,6 @@ function getUserLocation(): Promise<{ lat: number; lng: number }> {
         });
       },
       () => {
-        // 거부하거나 실패하면 서울로 fallback
         resolve(SEOUL_CENTER);
       },
       { timeout: 5000 }
@@ -60,8 +62,8 @@ function getUserLocation(): Promise<{ lat: number; lng: number }> {
 }
 
 interface KakaoMapViewProps {
-  center?: { lat: number; lng: number }; // optional로 변경
-  zoom?: number; // optional로 변경
+  center?: { lat: number; lng: number };
+  zoom?: number;
   properties: Property[];
   selectedPropertyId?: string;
   hoveredPropertyId?: string;
@@ -85,6 +87,7 @@ export function KakaoMapView({
     lat: number;
     lng: number;
   } | null>(center ?? null);
+  const [mapReady, setMapReady] = useState(false);
 
   const initMap = usePersistFn(
     async (mapCenter: { lat: number; lng: number }) => {
@@ -94,7 +97,6 @@ export function KakaoMapView({
         return;
       }
 
-      // 이미 초기화된 경우 스킵
       if (map.current) return;
 
       map.current = new window.kakao.maps.Map(mapContainer.current, {
@@ -102,57 +104,56 @@ export function KakaoMapView({
         level: zoom,
       });
 
-      const zoomControl = new window.kakao.maps.ZoomControl();
       map.current.addControl(
-        zoomControl,
+        new window.kakao.maps.ZoomControl(),
         window.kakao.maps.ControlPosition.RIGHT
       );
-
-      const mapTypeControl = new window.kakao.maps.MapTypeControl();
       map.current.addControl(
-        mapTypeControl,
+        new window.kakao.maps.MapTypeControl(),
         window.kakao.maps.ControlPosition.TOPRIGHT
       );
+
+      setMapReady(true);
     }
   );
 
-  // 현재 위치 or 서울로 초기 중심 결정
   useEffect(() => {
     if (center) {
-      // 부모에서 명시적으로 center를 줬으면 그걸 사용
       setResolvedCenter(center);
       return;
     }
-
-    getUserLocation().then(loc => {
-      setResolvedCenter(loc);
-    });
+    getUserLocation().then(loc => setResolvedCenter(loc));
   }, [center]);
 
-  // resolvedCenter가 확정되면 지도 초기화
   useEffect(() => {
     if (!resolvedCenter) return;
     initMap(resolvedCenter);
   }, [resolvedCenter, initMap]);
 
-  // 외부 center prop 변경 시 지도 이동
   useEffect(() => {
-    if (map.current && window.kakao?.maps && resolvedCenter) {
-      map.current.setCenter(
-        new window.kakao.maps.LatLng(resolvedCenter.lat, resolvedCenter.lng)
-      );
-      map.current.setLevel(zoom);
-    }
-  }, [resolvedCenter, zoom]);
+    if (!mapReady || !map.current || !window.kakao?.maps || !resolvedCenter)
+      return;
+    map.current.panTo(
+      new window.kakao.maps.LatLng(resolvedCenter.lat, resolvedCenter.lng)
+    );
+  }, [resolvedCenter, zoom, mapReady]);
 
-  // 마커 업데이트
   useEffect(() => {
-    if (!map.current || !window.kakao?.maps) return;
+    if (!mapReady || !map.current || !window.kakao?.maps) return;
 
     markersRef.current.forEach(marker => marker.setMap(null));
     markersRef.current.clear();
 
     properties.forEach(property => {
+      const isSelected = property.id === selectedPropertyId;
+
+      const markerImage = isSelected
+        ? new window.kakao.maps.MarkerImage(
+            SELECTED_MARKER_IMG,
+            new window.kakao.maps.Size(24, 35)
+          )
+        : undefined;
+
       const marker = new window.kakao.maps.Marker({
         position: new window.kakao.maps.LatLng(
           property.latitude,
@@ -160,15 +161,26 @@ export function KakaoMapView({
         ),
         map: map.current,
         title: property.title,
+        ...(markerImage ? { image: markerImage } : {}),
+        zIndex: isSelected ? 10 : 1,
       });
 
       window.kakao.maps.event.addListener(marker, "click", () => {
+        map.current.panTo(
+          new window.kakao.maps.LatLng(property.latitude, property.longitude)
+        );
         onPropertySelect?.(property);
       });
 
       markersRef.current.set(property.id, marker);
     });
-  }, [properties, selectedPropertyId, hoveredPropertyId, onPropertySelect]);
+  }, [
+    mapReady,
+    properties,
+    selectedPropertyId,
+    hoveredPropertyId,
+    onPropertySelect,
+  ]);
 
   return (
     <div
