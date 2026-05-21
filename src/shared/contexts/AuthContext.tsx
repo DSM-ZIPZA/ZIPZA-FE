@@ -9,43 +9,61 @@ export interface User {
 
 interface AuthContextValue {
   user: User | null;
+  token: string | null;
   login: () => void;
-  mockLogin: () => void;
+  setAuthToken: (token: string) => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const USER_STORAGE_KEY = "zipza_user";
+export const TOKEN_KEY = "zipza_access_token";
+
+function decodeUser(token: string): User | null {
+  try {
+    const payload = JSON.parse(
+      atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))
+    ) as Record<string, unknown>;
+    const name =
+      (payload.name as string) ??
+      (payload.preferred_username as string) ??
+      (payload.sub as string) ??
+      "사용자";
+    const email = (payload.email as string) ?? (payload.sub as string) ?? "";
+    return { name, email };
+  } catch {
+    return null;
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const [token, setToken] = useState<string | null>(() =>
+    localStorage.getItem(TOKEN_KEY)
+  );
   const [user, setUser] = useState<User | null>(() => {
-    try {
-      const stored = localStorage.getItem(USER_STORAGE_KEY);
-      return stored ? (JSON.parse(stored) as User) : null;
-    } catch {
-      return null;
-    }
+    const stored = localStorage.getItem(TOKEN_KEY);
+    return stored ? decodeUser(stored) : null;
   });
 
   const login = () => {
     window.location.href = getLoginUrl();
   };
 
-  const mockLogin = () => {
-    const mockUser: User = { name: "김도은", email: "qwaszx080402@dsm.hs.kr" };
-    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(mockUser));
-    setUser(mockUser);
+  const setAuthToken = (newToken: string) => {
+    localStorage.setItem(TOKEN_KEY, newToken);
+    setToken(newToken);
+    setUser(decodeUser(newToken));
   };
 
   const logout = () => {
     document.cookie = `${COOKIE_NAME}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-    localStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem(TOKEN_KEY);
+    setToken(null);
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, mockLogin, logout }}>
+    <AuthContext.Provider value={{ user, token, login, setAuthToken, logout }}>
       {children}
     </AuthContext.Provider>
   );

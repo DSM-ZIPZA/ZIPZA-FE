@@ -12,7 +12,7 @@ function KakaoIcon() {
 }
 
 export function LoginModal() {
-  const { mockLogin } = useAuth();
+  const { login } = useAuth();
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center backdrop-blur-sm">
@@ -32,7 +32,7 @@ export function LoginModal() {
             로그인하고 맞춤 매물을 확인하세요
           </p>
           <button
-            onClick={mockLogin}
+            onClick={login}
             className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl font-medium text-sm transition-opacity hover:opacity-90"
             style={{ backgroundColor: "#FEE500", color: "#000000" }}
           >

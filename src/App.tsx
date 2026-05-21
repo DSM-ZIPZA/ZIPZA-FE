@@ -1,6 +1,7 @@
 import { Toaster } from "@/shared/ui/sonner";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 import NotFound from "@/pages/NotFound";
+import OAuthCallback from "@/pages/OAuthCallback";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./shared/ui/ErrorBoundary";
 import { ThemeProvider } from "@/shared/contexts/ThemeContext";
@@ -11,6 +12,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={PropertySearch} />
+      <Route path="/oauth/callback" component={OAuthCallback} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
