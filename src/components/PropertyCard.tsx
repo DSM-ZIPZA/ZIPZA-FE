@@ -33,16 +33,22 @@ export function PropertyCard({
           <h3 className="font-bold text-base text-black">{property.title}</h3>
         </div>
         <p className="text-sm text-gray-700 mb-1">
-          {formatArea(property.area)} · {property.rooms}개 방 ·{" "}
-          {property.totalFloors}층
+          {formatArea(property.area)}
+          {property.floor ? ` · ${property.floor}층` : ""}
+          {property.totalFloors ? ` / ${property.totalFloors}층` : ""}
         </p>
-        <p className="text-xs text-gray-600">보증금 조정가능 베스트 추천</p>
+        <p className="text-xs text-gray-600">{property.address}</p>
       </div>
 
       <div className="shrink-0 text-right">
         <p className="font-bold text-base text-black">
-          {formatPrice(property.price)}
+          {formatPrice(property.deposit ?? property.price)}
         </p>
+        {!!property.monthlyRent && (
+          <p className="text-xs text-gray-500">
+            월세 {formatPrice(property.monthlyRent)}
+          </p>
+        )}
       </div>
     </div>
   );

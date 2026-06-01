@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Search, X, MapPin, Loader2 } from "lucide-react";
+import { zipzaApi } from "@/shared/api/zipza";
 
 interface KakaoAddress {
   roadAddress: string;
@@ -64,19 +65,14 @@ export function SearchBar({
     const fetchAddresses = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch(
-          `/api/geocode?query=${encodeURIComponent(debouncedQuery)}`
-        );
-        const data = await res.json();
+        const data = await zipzaApi.searchAddress(debouncedQuery);
 
-        const addresses: KakaoAddress[] = (data.documents ?? []).map(
-          (doc: any) => ({
-            roadAddress: doc.road_address_name ?? "",
-            jibunAddress: doc.address_name ?? "",
-            lat: doc.y,
-            lon: doc.x,
-          })
-        );
+        const addresses: KakaoAddress[] = (data.documents ?? []).map(doc => ({
+          roadAddress: doc.roadAddress ?? "",
+          jibunAddress: doc.jibunAddress ?? "",
+          lat: String(doc.latitude),
+          lon: String(doc.longitude),
+        }));
 
         setSuggestions(addresses);
         setIsOpen(true);
@@ -90,7 +86,7 @@ export function SearchBar({
     fetchAddresses();
   }, [debouncedQuery]);
 
-  const handleSelect = (address: KakaoAddress) => {
+  const handleSelect = async (address: KakaoAddress) => {
     const display = address.roadAddress || address.jibunAddress;
 
     skipNextSearchRef.current = true;
@@ -100,7 +96,17 @@ export function SearchBar({
     setIsOpen(false);
 
     onLocationChange?.(display);
-    onAddressSelect?.(address);
+    try {
+      const resolved = await zipzaApi.resolveAddress(display);
+      onAddressSelect?.({
+        roadAddress: resolved.roadAddress,
+        jibunAddress: resolved.jibunAddress,
+        lat: String(resolved.latitude),
+        lon: String(resolved.longitude),
+      });
+    } catch {
+      onAddressSelect?.(address);
+    }
   };
 
   const handleClear = () => {

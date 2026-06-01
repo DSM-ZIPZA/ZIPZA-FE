@@ -1,9 +1,5 @@
 import { useState, useEffect } from "react";
 import type { Property, FilterState, MapState } from "@/shared/types";
-import {
-  generateMockProperties,
-  filterProperties,
-} from "@/shared/lib/mock-data";
 import { DEFAULT_LOCATION } from "@/shared/const";
 import { PropertyCard } from "@/components/PropertyCard";
 import { SearchBar } from "@/components/search/SearchBar";
@@ -14,6 +10,7 @@ import { PropertyAnalysisDrawer } from "@/components/analysis/PropertyAnalysisDr
 import { PropertyFilter } from "@/components/PropertyFilter";
 import { LoginModal } from "@/shared/ui/LoginModal";
 import { useAuth } from "@/shared/contexts/AuthContext";
+import { listingToProperty, zipzaApi } from "@/shared/api/zipza";
 
 export default function PropertySearch() {
   const { user } = useAuth();
@@ -37,7 +34,10 @@ export default function PropertySearch() {
   const [hoveredPropertyId, setHoveredPropertyId] = useState<
     string | undefined
   >();
-  const [drawerOpen, setDrawerOpen] = useState(false); // ← 변경
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const selectedProperty =
     properties.find(p => p.id === selectedPropertyId) ?? null;
   const [transactionType, setTransactionType] = useState<
@@ -47,16 +47,66 @@ export default function PropertySearch() {
     "nearby" | "price-low" | "price-high"
   >("nearby");
 
-  useEffect(() => {
-    const mockData = generateMockProperties(30);
-    setProperties(mockData);
-    setFilteredProperties(mockData);
-  }, []);
+  const fetchProperties = async (params?: {
+    center?: { lat: number; lng: number };
+    query?: string;
+  }) => {
+    if (!user) return;
+    setIsLoading(true);
+    setErrorMessage("");
+    try {
+      const center = params?.center ?? mapState.center;
+      const result = await zipzaApi.getProperties({
+        lat: center.lat,
+        lng: center.lng,
+        radiusMeters: 5000,
+        query: params?.query || searchQuery,
+        transactionType:
+          transactionType === "rent"
+            ? "RENT"
+            : transactionType === "lease"
+              ? "LEASE"
+              : undefined,
+        depositMin: filters.depositMin
+          ? Math.round(filters.depositMin / 10000)
+          : undefined,
+        depositMax: filters.depositMax
+          ? Math.round(filters.depositMax / 10000)
+          : undefined,
+        monthlyRentMin: filters.rentMin
+          ? Math.round(filters.rentMin / 10000)
+          : undefined,
+        monthlyRentMax: filters.rentMax
+          ? Math.round(filters.rentMax / 10000)
+          : undefined,
+        sort: sortType,
+      });
+      setProperties(result.map(listingToProperty));
+    } catch (error) {
+      setErrorMessage("매물 목록을 불러오지 못했습니다.");
+      setProperties([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let filtered = filterProperties(properties, {
-      ...filters,
-      transactionType,
+    fetchProperties();
+  }, [user, transactionType, filters, sortType]);
+
+  useEffect(() => {
+    let filtered = properties.filter(property => {
+      if (transactionType !== "sale" && property.transactionType !== transactionType)
+        return false;
+      if (filters.depositMin && (property.deposit ?? property.price) < filters.depositMin)
+        return false;
+      if (filters.depositMax && (property.deposit ?? property.price) > filters.depositMax)
+        return false;
+      if (filters.rentMin && (property.monthlyRent ?? 0) < filters.rentMin)
+        return false;
+      if (filters.rentMax && (property.monthlyRent ?? 0) > filters.rentMax)
+        return false;
+      return true;
     });
     if (sortType === "price-low")
       filtered = [...filtered].sort((a, b) => a.price - b.price);
@@ -89,11 +139,16 @@ export default function PropertySearch() {
       <div className="flex flex-1 overflow-hidden">
         <div className="w-full md:w-96 flex flex-col bg-white border-r border-gray-200 overflow-hidden">
           <SearchBar
-            onLocationChange={() => {}}
+            onLocationChange={location => setSearchQuery(location)}
             onAddressSelect={addr => {
               const lat = parseFloat(addr.lat);
               const lng = parseFloat(addr.lon);
-              setMapState({ center: { lat, lng }, zoom: 5 });
+              const center = { lat, lng };
+              setMapState({ center, zoom: 5 });
+              fetchProperties({
+                center,
+                query: addr.roadAddress || addr.jibunAddress,
+              });
             }}
             onSortChange={sort => setSortType(sort)}
           />
@@ -106,7 +161,11 @@ export default function PropertySearch() {
           />
 
           <div className="flex-1 overflow-y-auto">
-            {filteredProperties.length > 0 ? (
+            {isLoading ? (
+              <div className="p-4 text-sm text-gray-500">매물을 불러오는 중...</div>
+            ) : errorMessage ? (
+              <div className="p-4 text-sm text-red-500">{errorMessage}</div>
+            ) : filteredProperties.length > 0 ? (
               <div className="divide-y divide-gray-200">
                 {filteredProperties.map(property => (
                   <div
