@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/shared/contexts/AuthContext";
-import { BACKEND_URL } from "@/const";
 
 export default function OAuthCallback() {
   const [, navigate] = useLocation();
@@ -13,7 +12,6 @@ export default function OAuthCallback() {
     const error = params.get("error");
     const message = params.get("message") ?? params.get("error_description");
     const token = params.get("token") ?? params.get("access_token");
-    const code = params.get("code");
 
     if (error || message) {
       setErrorMessage(message || error || "로그인에 실패했습니다.");
@@ -23,15 +21,6 @@ export default function OAuthCallback() {
     if (token) {
       setAuthToken(token);
       navigate("/");
-      return;
-    }
-
-    if (code) {
-      const state = params.get("state");
-      const redirectUrl = new URL(`${BACKEND_URL}/oauth/callback`);
-      redirectUrl.searchParams.set("code", code);
-      if (state) redirectUrl.searchParams.set("state", state);
-      window.location.href = redirectUrl.toString();
       return;
     }
 

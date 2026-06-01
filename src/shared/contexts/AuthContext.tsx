@@ -1,6 +1,8 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { getLoginUrl } from "@/const";
 import { COOKIE_NAME } from "@/shared/const";
+import { TOKEN_KEY } from "@/shared/api/client";
+import { zipzaApi } from "@/shared/api/zipza";
 
 export interface User {
   name: string;
@@ -17,33 +19,31 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export const TOKEN_KEY = "zipza_access_token";
-
-function decodeUser(token: string): User | null {
-  try {
-    const payload = JSON.parse(
-      atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))
-    ) as Record<string, unknown>;
-    const name =
-      (payload.name as string) ??
-      (payload.preferred_username as string) ??
-      (payload.sub as string) ??
-      "사용자";
-    const email = (payload.email as string) ?? (payload.sub as string) ?? "";
-    return { name, email };
-  } catch {
-    return null;
-  }
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() =>
     localStorage.getItem(TOKEN_KEY)
   );
-  const [user, setUser] = useState<User | null>(() => {
+  const [user, setUser] = useState<User | null>(null);
+
+  const refreshUser = async () => {
     const stored = localStorage.getItem(TOKEN_KEY);
-    return stored ? decodeUser(stored) : null;
-  });
+    if (!stored) {
+      setUser(null);
+      return;
+    }
+    try {
+      const me = await zipzaApi.me();
+      setUser({ name: me.nickname, email: me.email });
+    } catch {
+      localStorage.removeItem(TOKEN_KEY);
+      setToken(null);
+      setUser(null);
+    }
+  };
+
+  useEffect(() => {
+    refreshUser();
+  }, []);
 
   const login = () => {
     window.location.href = getLoginUrl();
@@ -52,10 +52,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const setAuthToken = (newToken: string) => {
     localStorage.setItem(TOKEN_KEY, newToken);
     setToken(newToken);
-    setUser(decodeUser(newToken));
+    refreshUser();
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await zipzaApi.logout();
+    } catch {
+      // 로컬 세션 정리는 서버 로그아웃 실패 여부와 무관하게 진행한다.
+    }
     document.cookie = `${COOKIE_NAME}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
     localStorage.removeItem(TOKEN_KEY);
     setToken(null);
