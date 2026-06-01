@@ -5,6 +5,7 @@ import { defineConfig, loadEnv } from "vite";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd());
+  const backendUrl = env.VITE_BACKEND_URL || "http://localhost:8080";
 
   return {
     plugins: [react(), tailwindcss()],
@@ -15,6 +16,10 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       proxy: {
+        "/api": {
+          target: backendUrl,
+          changeOrigin: true,
+        },
         "/api/geocode": {
           target: "https://dapi.kakao.com",
           changeOrigin: true,

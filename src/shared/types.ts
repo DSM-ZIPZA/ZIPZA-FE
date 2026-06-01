@@ -19,6 +19,8 @@ export interface Property {
   price: number;
   deposit?: number;
   monthlyRent?: number;
+  averageSalePrice?: number;
+  averageSalePriceStatus?: "loading" | "ready" | "empty";
   area: number;
   exclusiveAreaM2?: number;
   rooms: number;

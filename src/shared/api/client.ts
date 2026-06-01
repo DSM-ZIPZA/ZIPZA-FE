@@ -1,6 +1,7 @@
 import { BACKEND_URL } from "@/const";
 
 export const TOKEN_KEY = "zipza_access_token";
+const API_BASE_URL = import.meta.env.DEV ? "" : BACKEND_URL;
 
 export class ApiError extends Error {
   status: number;
@@ -19,7 +20,7 @@ export async function apiRequest<T>(
   path: string,
   options: ApiOptions = {}
 ): Promise<T> {
-  if (!BACKEND_URL) {
+  if (!API_BASE_URL && !import.meta.env.DEV) {
     throw new ApiError(0, "VITE_BACKEND_URL이 설정되지 않았습니다.");
   }
 
@@ -32,12 +33,12 @@ export async function apiRequest<T>(
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(`${BACKEND_URL}${path}`, {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers,
   });
 
-  if (response.status === 401) {
+  if (response.status === 401 || response.status === 403) {
     localStorage.removeItem(TOKEN_KEY);
   }
 

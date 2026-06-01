@@ -23,7 +23,6 @@ export function Header({ transactionType, onTransactionTypeChange }: HeaderProps
   const { user, logout } = useAuth();
 
   const tabs: Array<{ key: TransactionType; label: string }> = [
-    { key: TRANSACTION_TYPES.SALE, label: "매매" },
     { key: TRANSACTION_TYPES.RENT, label: "월세" },
     { key: TRANSACTION_TYPES.LEASE, label: "전세" },
   ];

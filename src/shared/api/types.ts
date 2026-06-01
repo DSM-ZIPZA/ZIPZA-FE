@@ -52,6 +52,14 @@ export interface PropertyListingResponse {
   createdAt: string;
 }
 
+export interface AverageSalePriceResponse {
+  query?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  averageSalePriceManwon?: number | null;
+  sampleCount: number;
+}
+
 export interface AnalysisRequestCreateRequest {
   property: {
     roadAddress: string;

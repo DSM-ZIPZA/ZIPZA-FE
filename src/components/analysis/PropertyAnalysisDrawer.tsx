@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import type { Property, PropertyDetail } from "@/shared/types";
 import { PropertyDetailPanel } from "./PropertyDetailPanel";
 import { IconZoomQuestion } from "@tabler/icons-react";
+import { TOKEN_KEY } from "@/shared/api/client";
 import {
   detailToPropertyDetail,
   transactionToContractType,
@@ -24,6 +25,8 @@ export function PropertyAnalysisDrawer({
   const [maintenanceFee, setMaintenanceFee] = useState("");
   const [dong, setDong] = useState("");
   const [ho, setHo] = useState("");
+  const [floor, setFloor] = useState("");
+  const [exclusiveArea, setExclusiveArea] = useState("");
   const [deposit, setDeposit] = useState("");
   const [monthlyRent, setMonthlyRent] = useState("");
   const [contractDate, setContractDate] = useState("");
@@ -54,6 +57,10 @@ export function PropertyAnalysisDrawer({
     setErrorMessage("");
     setDong("");
     setHo("");
+    setFloor(property?.floor ? String(property.floor) : "");
+    setExclusiveArea(
+      property?.exclusiveAreaM2 ? String(property.exclusiveAreaM2) : ""
+    );
     setDeposit(property?.deposit ? String(Math.round(property.deposit / 10000)) : "");
     setMonthlyRent(
       property?.monthlyRent ? String(Math.round(property.monthlyRent / 10000)) : ""
@@ -77,6 +84,10 @@ export function PropertyAnalysisDrawer({
 
   const handleAnalyze = async () => {
     if (!property) return;
+    if (!localStorage.getItem(TOKEN_KEY)) {
+      setErrorMessage("로그인 세션이 만료되었습니다. 다시 로그인해주세요.");
+      return;
+    }
     setIsAnalyzing(true);
     setErrorMessage("");
     try {
@@ -99,8 +110,10 @@ export function PropertyAnalysisDrawer({
         contractType: transactionToContractType(property.transactionType),
         depositAmount: Number(deposit || 0),
         monthlyRent: monthlyRent ? Number(monthlyRent) : null,
-        floor: property.floor || 1,
-        exclusiveArea: property.exclusiveAreaM2 || property.area * 3.3058,
+        floor: Number(floor || property.floor || 1),
+        exclusiveArea: Number(
+          exclusiveArea || property.exclusiveAreaM2 || property.area * 3.3058 || 0
+        ),
         contractDate,
         balanceDate,
         expiryDate,
@@ -114,7 +127,14 @@ export function PropertyAnalysisDrawer({
       const detail = await zipzaApi.getAnalysisDetail(created.requestId);
       setAnalysisResult(detailToPropertyDetail(detail));
     } catch (error) {
-      setErrorMessage("분석을 실행하지 못했습니다. 입력값과 서버 상태를 확인해주세요.");
+      const status = error instanceof Error && "status" in error
+        ? Number((error as { status: number }).status)
+        : null;
+      if (status === 401 || status === 403) {
+        setErrorMessage("로그인 세션이 만료되었습니다. 다시 로그인해주세요.");
+      } else {
+        setErrorMessage("분석을 실행하지 못했습니다. 입력값과 서버 상태를 확인해주세요.");
+      }
     } finally {
       setIsAnalyzing(false);
     }
@@ -207,6 +227,34 @@ export function PropertyAnalysisDrawer({
                     className="w-full outline-none"
                   />
                   <span className="text-[11px] text-gray-400">만원</span>
+                </div>
+              </div>
+
+              <div>
+                <span className="block text-xs text-gray-400 font-medium mb-1.5">
+                  층 / 전용면적
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="border border-gray-200 rounded-md px-2.5 py-2 text-sm text-gray-800 flex items-center gap-1">
+                    <input
+                      type="number"
+                      value={floor}
+                      onChange={e => setFloor(e.target.value)}
+                      placeholder="층"
+                      className="w-full outline-none"
+                    />
+                    <span className="text-[11px] text-gray-400">층</span>
+                  </div>
+                  <div className="border border-gray-200 rounded-md px-2.5 py-2 text-sm text-gray-800 flex items-center gap-1">
+                    <input
+                      type="number"
+                      value={exclusiveArea}
+                      onChange={e => setExclusiveArea(e.target.value)}
+                      placeholder="㎡"
+                      className="w-full outline-none"
+                    />
+                    <span className="text-[11px] text-gray-400">㎡</span>
+                  </div>
                 </div>
               </div>
 

@@ -6,6 +6,7 @@ import type {
   AnalysisRequestCreateRequest,
   AnalysisRequestResponse,
   AnalysisStartRequest,
+  AverageSalePriceResponse,
   ReminderCreateRequest,
   PropertyListingResponse,
   UserInfoResponse,
@@ -51,6 +52,22 @@ export const zipzaApi = {
     if (params.sort) search.set("sort", params.sort);
     return apiRequest<PropertyListingResponse[]>(
       `/api/properties${search.size ? `?${search}` : ""}`
+    );
+  },
+  getAverageSalePrice: (params: {
+    query?: string;
+    latitude?: number;
+    longitude?: number;
+    radiusMeters?: number;
+  }) => {
+    const search = new URLSearchParams();
+    if (params.query) search.set("query", params.query);
+    if (params.latitude != null) search.set("latitude", String(params.latitude));
+    if (params.longitude != null) search.set("longitude", String(params.longitude));
+    if (params.radiusMeters != null)
+      search.set("radiusMeters", String(params.radiusMeters));
+    return apiRequest<AverageSalePriceResponse>(
+      `/api/property-prices/average-sale${search.size ? `?${search}` : ""}`
     );
   },
   createAnalysisRequest: (body: AnalysisRequestCreateRequest) =>
