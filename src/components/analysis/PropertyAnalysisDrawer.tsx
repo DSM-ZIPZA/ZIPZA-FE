@@ -1,16 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import type { Property, PropertyDetail } from "@/shared/types";
-import { mockPropertyDetail } from "@/shared/lib/mock-data";
 import { PropertyDetailPanel } from "./PropertyDetailPanel";
-import { IconZoom, IconZoomQuestion } from "@tabler/icons-react";
-
-function formatSidebarPrice(value: number) {
-  const eok = Math.floor(value / 100000000);
-  const man = Math.floor((value % 100000000) / 10000);
-  if (eok > 0 && man > 0) return `${eok}억 ${man}만원`;
-  if (eok > 0) return `${eok}억원`;
-  return `${man}만원`;
-}
+import { IconZoomQuestion } from "@tabler/icons-react";
+import {
+  detailToPropertyDetail,
+  transactionToContractType,
+  zipzaApi,
+} from "@/shared/api/zipza";
 
 interface PropertyAnalysisDrawerProps {
   property: Property | null;
@@ -26,10 +22,19 @@ export function PropertyAnalysisDrawer({
   sidebarWidth = 384,
 }: PropertyAnalysisDrawerProps) {
   const [maintenanceFee, setMaintenanceFee] = useState("");
+  const [dong, setDong] = useState("");
+  const [ho, setHo] = useState("");
+  const [deposit, setDeposit] = useState("");
+  const [monthlyRent, setMonthlyRent] = useState("");
+  const [contractDate, setContractDate] = useState("");
+  const [balanceDate, setBalanceDate] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
   const [analysisResult, setAnalysisResult] = useState<PropertyDetail | null>(
     null
   );
+  const [requestId, setRequestId] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const sheetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -43,8 +48,24 @@ export function PropertyAnalysisDrawer({
 
   useEffect(() => {
     setAnalysisResult(null);
+    setRequestId(null);
     setIsAnalyzing(false);
     setMaintenanceFee("");
+    setErrorMessage("");
+    setDong("");
+    setHo("");
+    setDeposit(property?.deposit ? String(Math.round(property.deposit / 10000)) : "");
+    setMonthlyRent(
+      property?.monthlyRent ? String(Math.round(property.monthlyRent / 10000)) : ""
+    );
+    const today = new Date();
+    const balance = new Date(today);
+    balance.setDate(today.getDate() + 30);
+    const expiry = new Date(today);
+    expiry.setFullYear(today.getFullYear() + 2);
+    setContractDate(today.toISOString().slice(0, 10));
+    setBalanceDate(balance.toISOString().slice(0, 10));
+    setExpiryDate(expiry.toISOString().slice(0, 10));
   }, [property?.id]);
 
   useEffect(() => {
@@ -54,20 +75,49 @@ export function PropertyAnalysisDrawer({
     };
   }, [isOpen]);
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (!property) return;
     setIsAnalyzing(true);
-    setTimeout(() => {
-      setAnalysisResult({
-        ...mockPropertyDetail,
-        id: property.id,
-        name: property.title,
-        price: property.price,
-        address: property.address,
-        area: property.area,
+    setErrorMessage("");
+    try {
+      const created = await zipzaApi.createAnalysisRequest({
+        property: {
+          roadAddress: property.roadAddress ?? property.address,
+          jibunAddress: property.jibunAddress ?? property.address,
+          detailAddress: property.detailAddress ?? `${dong}동 ${ho}호`,
+          buildingManagementNumber: property.buildingManagementNumber ?? "",
+          postalCode: property.postalCode ?? "",
+          administrativeCode: property.administrativeCode ?? "",
+          city: property.city ?? "",
+          district: property.district ?? "",
+          neighborhood: property.neighborhood ?? "",
+          buildingName: property.title,
+          isApartment: property.isApartment ?? property.type === "apartment",
+          longitude: property.longitude,
+          latitude: property.latitude,
+        },
+        contractType: transactionToContractType(property.transactionType),
+        depositAmount: Number(deposit || 0),
+        monthlyRent: monthlyRent ? Number(monthlyRent) : null,
+        floor: property.floor || 1,
+        exclusiveArea: property.exclusiveAreaM2 || property.area * 3.3058,
+        contractDate,
+        balanceDate,
+        expiryDate,
       });
+      setRequestId(created.requestId);
+      await zipzaApi.startAnalysis(created.requestId, {
+        building: { dong: dong || "1", ho: ho || "1" },
+        registry: { address: property.roadAddress ?? property.address },
+        rentTradeMonths: 24,
+      });
+      const detail = await zipzaApi.getAnalysisDetail(created.requestId);
+      setAnalysisResult(detailToPropertyDetail(detail));
+    } catch (error) {
+      setErrorMessage("분석을 실행하지 못했습니다. 입력값과 서버 상태를 확인해주세요.");
+    } finally {
       setIsAnalyzing(false);
-    }, 800);
+    }
   };
 
   if (!property) return null;
@@ -122,13 +172,23 @@ export function PropertyAnalysisDrawer({
                   <div>
                     <span className="block text-sm mb-1">동</span>
                     <div className="border border-gray-200 rounded-md px-2.5 py-2 text-sm text-gray-800">
-                      {mockPropertyDetail.dong}동
+                      <input
+                        value={dong}
+                        onChange={e => setDong(e.target.value)}
+                        placeholder="동"
+                        className="w-full outline-none"
+                      />
                     </div>
                   </div>
                   <div>
                     <span className="block text-sm mb-1">호</span>
                     <div className="border border-gray-200 rounded-md px-2.5 py-2 text-sm text-gray-800">
-                      {mockPropertyDetail.ho}호
+                      <input
+                        value={ho}
+                        onChange={e => setHo(e.target.value)}
+                        placeholder="호"
+                        className="w-full outline-none"
+                      />
                     </div>
                   </div>
                 </div>
@@ -139,8 +199,14 @@ export function PropertyAnalysisDrawer({
                   보증금
                 </span>
                 <div className="border border-gray-200 rounded-md px-2.5 py-2 text-sm text-gray-800 flex justify-between items-center">
-                  <span>{formatSidebarPrice(mockPropertyDetail.deposit)}</span>
-                  <span className="text-[11px] text-gray-400">3억</span>
+                  <input
+                    type="number"
+                    value={deposit}
+                    onChange={e => setDeposit(e.target.value)}
+                    placeholder="만원 단위"
+                    className="w-full outline-none"
+                  />
+                  <span className="text-[11px] text-gray-400">만원</span>
                 </div>
               </div>
 
@@ -149,11 +215,51 @@ export function PropertyAnalysisDrawer({
                   월세
                 </span>
                 <div className="border border-gray-200 rounded-md px-2.5 py-2 text-sm text-gray-800 flex justify-between items-center">
-                  <span>
-                    {formatSidebarPrice(mockPropertyDetail.monthlyRent)}
-                  </span>
-                  <span className="text-[11px] text-gray-400">30만</span>
+                  <input
+                    type="number"
+                    value={monthlyRent}
+                    onChange={e => setMonthlyRent(e.target.value)}
+                    placeholder="만원 단위"
+                    className="w-full outline-none"
+                  />
+                  <span className="text-[11px] text-gray-400">만원</span>
                 </div>
+              </div>
+
+              <div>
+                <span className="block text-xs text-gray-400 font-medium mb-1.5">
+                  계약일
+                </span>
+                <input
+                  type="date"
+                  value={contractDate}
+                  onChange={e => setContractDate(e.target.value)}
+                  className="w-full border border-gray-200 rounded-md px-2.5 py-2 text-sm text-gray-800 outline-none"
+                />
+              </div>
+
+              <div>
+                <span className="block text-xs text-gray-400 font-medium mb-1.5">
+                  잔금일
+                </span>
+                <input
+                  type="date"
+                  value={balanceDate}
+                  onChange={e => setBalanceDate(e.target.value)}
+                  className="w-full border border-gray-200 rounded-md px-2.5 py-2 text-sm text-gray-800 outline-none"
+                />
+              </div>
+
+              <div>
+                <span className="block text-xs text-gray-400 font-medium mb-1.5">
+                  만료일
+                </span>
+                <input
+                  type="date"
+                  value={expiryDate}
+                  onChange={e => setExpiryDate(e.target.value)}
+                  className="w-full border border-gray-200 rounded-md px-2.5 py-2 text-sm text-gray-800 outline-none"
+                />
               </div>
 
               <div>
@@ -182,8 +288,11 @@ export function PropertyAnalysisDrawer({
                   대한 분석 결과가 없습니다.
                 </p>
                 <p className="text-xs text-gray-400">
-                  왜 이 정보들이 필요한가요?
+                  동/호수와 계약 조건을 입력한 뒤 분석을 시작해주세요.
                 </p>
+                {errorMessage && (
+                  <p className="text-xs text-red-500">{errorMessage}</p>
+                )}
               </div>
             ) : (
               <PropertyDetailPanel property={analysisResult} />
@@ -213,10 +322,26 @@ export function PropertyAnalysisDrawer({
               </button>
             ) : (
               <>
-                <button className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
+                <button
+                  onClick={() => {
+                    if (!requestId) return;
+                    const remindDate = balanceDate || contractDate;
+                    zipzaApi.createReminder(requestId, {
+                      reminderType: "BEFORE_BALANCE",
+                      remindDate,
+                      channel: "EMAIL",
+                    });
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                >
                   알림 등록하기
                 </button>
-                <button className="px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600 transition-colors">
+                <button
+                  onClick={() => {
+                    window.location.href = "/mypage";
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600 transition-colors"
+                >
                   마이페이지로 보내기 →
                 </button>
               </>
