@@ -35,7 +35,7 @@ export function PropertyDetailPanel({ property }: Props) {
           <span className="text-gray-400">{property.area}㎡</span>
         </div>
         <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm mt-1">
-          <span className="text-gray-500 font-semibold">매매가 평균</span>
+          <span className="text-gray-500 font-semibold">전세가 평균</span>
           <span className="text-gray-400">{averageSalePriceLabel}</span>
         </div>
       </section>

@@ -21,14 +21,14 @@ const typeLabels: Record<BuildingTypeFilter, string> = {
 const sortLabels: Record<SortType, string> = {
   nearby: "지도순",
   name: "이름순",
-  "price-high": "평균매매가 높은순",
-  "price-low": "평균매매가 낮은순",
+  "price-high": "평균전세가 높은순",
+  "price-low": "평균전세가 낮은순",
 };
 
 function getAverageSalePriceLabel(building: Property) {
-  if (building.averageSalePriceStatus === "loading") return "평균매매가 조회 중";
-  if (!building.averageSalePrice) return "평균매매가 정보 없음";
-  return `평균매매가 ${formatPrice(building.averageSalePrice)}`;
+  if (building.averageSalePriceStatus === "loading") return "평균전세가 조회 중";
+  if (!building.averageSalePrice) return "평균전세가 정보 없음";
+  return `평균전세가 ${formatPrice(building.averageSalePrice)}`;
 }
 
 export function VisibleResidentialBuildingList({
