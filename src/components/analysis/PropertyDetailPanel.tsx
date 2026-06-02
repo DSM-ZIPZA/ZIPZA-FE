@@ -1,4 +1,5 @@
 import type { PropertyDetail } from "@/shared/types";
+import { formatPrice } from "@/shared/lib/format";
 import { CandlestickChart } from "./CandlestickChart";
 import { RegistrationTable } from "./RegistrationTable";
 import { BuildingLandSection } from "./BuildingLandSection";
@@ -9,6 +10,9 @@ interface Props {
 }
 
 export function PropertyDetailPanel({ property }: Props) {
+  const averageSalePriceLabel =
+    property.avgSalePrice > 0 ? formatPrice(property.avgSalePrice) : "조회 중";
+
   return (
     <div className="p-5 sm:p-6 flex flex-col gap-5">
       <div className="flex justify-between items-start gap-4">
@@ -32,10 +36,7 @@ export function PropertyDetailPanel({ property }: Props) {
         </div>
         <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm mt-1">
           <span className="text-gray-500 font-semibold">매매가 평균</span>
-          <span className="text-gray-400">
-            {Math.floor(property.avgSalePrice / 100000000)}억{" "}
-            {Math.floor((property.avgSalePrice % 100000000) / 10000)}천만
-          </span>
+          <span className="text-gray-400">{averageSalePriceLabel}</span>
         </div>
       </section>
 

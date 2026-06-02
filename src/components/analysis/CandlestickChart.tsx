@@ -30,6 +30,14 @@ export function CandlestickChart({ data }: Props) {
     PB = 24,
     PL = 10;
 
+  if (data.length === 0) {
+    return (
+      <div className="flex h-[200px] w-full items-center justify-center rounded-md border border-dashed border-gray-200 bg-gray-50 text-sm font-medium text-gray-400">
+        시세 데이터 준비 중
+      </div>
+    );
+  }
+
   const minVal = Math.min(...data.map(d => d.low));
   const maxVal = Math.max(...data.map(d => d.high));
   const valRange = maxVal - minVal || 1;
