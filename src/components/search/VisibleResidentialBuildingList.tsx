@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Building2, MapPin, Search, SlidersHorizontal, X } from "lucide-react";
+import { Building2, MapPin, SlidersHorizontal } from "lucide-react";
 import type { Property } from "@/shared/types";
 import { formatPrice } from "@/shared/lib/format";
 
@@ -26,7 +26,8 @@ const sortLabels: Record<SortType, string> = {
 };
 
 function getAverageSalePriceLabel(building: Property) {
-  if (building.averageSalePriceStatus === "loading") return "평균전세가 조회 중";
+  if (building.averageSalePriceStatus === "loading")
+    return "평균전세가 조회 중";
   if (!building.averageSalePrice) return "평균전세가 정보 없음";
   return `평균전세가 ${formatPrice(building.averageSalePrice)}`;
 }
@@ -36,24 +37,17 @@ export function VisibleResidentialBuildingList({
   selectedBuildingId,
   onSelect,
 }: VisibleResidentialBuildingListProps) {
-  const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<BuildingTypeFilter>("all");
   const [sortType, setSortType] = useState<SortType>("nearby");
   const [filterOpen, setFilterOpen] = useState(false);
 
   const filteredBuildings = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
     const next = buildings.filter(building => {
-      const address = building.roadAddress || building.jibunAddress || building.address;
-      const matchesQuery =
-        !normalizedQuery ||
-        building.title.toLowerCase().includes(normalizedQuery) ||
-        address.toLowerCase().includes(normalizedQuery);
       const matchesType =
         typeFilter === "all" ||
         (typeFilter === "apartment" && building.type === "apartment") ||
         (typeFilter === "villa" && building.type !== "apartment");
-      return matchesQuery && matchesType;
+      return matchesType;
     });
 
     if (sortType === "name") {
@@ -72,34 +66,12 @@ export function VisibleResidentialBuildingList({
       );
     }
     return next;
-  }, [buildings, query, sortType, typeFilter]);
+  }, [buildings, sortType, typeFilter]);
 
-  const hasFilter = query || typeFilter !== "all" || sortType !== "nearby";
+  const hasFilter = typeFilter !== "all" || sortType !== "nearby";
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="border-b border-gray-200 p-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            value={query}
-            onChange={event => setQuery(event.target.value)}
-            placeholder="건물명, 도로명, 지번 검색"
-            className="w-full rounded-lg border border-gray-300 py-3 pl-9 pr-9 text-sm outline-none transition-colors focus:border-black"
-          />
-          {query && (
-            <button
-              type="button"
-              onClick={() => setQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              aria-label="검색어 지우기"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-      </div>
-
       <div className="border-b border-gray-200 bg-slate-100 px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -155,7 +127,6 @@ export function VisibleResidentialBuildingList({
               <button
                 type="button"
                 onClick={() => {
-                  setQuery("");
                   setTypeFilter("all");
                   setSortType("nearby");
                 }}
@@ -190,7 +161,9 @@ export function VisibleResidentialBuildingList({
                       {building.title}
                     </p>
                     <p className="mt-1 truncate text-xs text-gray-500">
-                      {building.roadAddress || building.jibunAddress || building.address}
+                      {building.roadAddress ||
+                        building.jibunAddress ||
+                        building.address}
                     </p>
                     <div className="mt-2 flex items-center justify-between gap-2">
                       <span className="text-xs text-gray-400">
@@ -207,7 +180,8 @@ export function VisibleResidentialBuildingList({
           </div>
         ) : (
           <div className="px-4 py-6 text-sm text-gray-500">
-            조건에 맞는 주거 건물이 없습니다. 지도 위치를 이동하거나 검색/필터를 조정하세요.
+            조건에 맞는 주거 건물이 없습니다. 지도 위치를 이동하거나 필터를
+            조정하세요.
           </div>
         )}
       </div>

@@ -1,8 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { Search, X, MapPin, Loader2 } from "lucide-react";
 import { zipzaApi } from "@/shared/api/zipza";
+import {
+  searchKakaoLocations,
+  type KakaoLocationSuggestion,
+} from "@/shared/lib/kakaoMaps";
 
-interface KakaoAddress {
+export interface KakaoAddress {
+  title: string;
   roadAddress: string;
   jibunAddress: string;
   lat: string;
@@ -65,14 +70,7 @@ export function SearchBar({
     const fetchAddresses = async () => {
       setIsLoading(true);
       try {
-        const data = await zipzaApi.searchAddress(debouncedQuery);
-
-        const addresses: KakaoAddress[] = (data.documents ?? []).map(doc => ({
-          roadAddress: doc.roadAddress ?? "",
-          jibunAddress: doc.jibunAddress ?? "",
-          lat: String(doc.latitude),
-          lon: String(doc.longitude),
-        }));
+        const addresses = await fetchAddressSuggestions(debouncedQuery);
 
         setSuggestions(addresses);
         setIsOpen(true);
@@ -87,7 +85,8 @@ export function SearchBar({
   }, [debouncedQuery]);
 
   const handleSelect = async (address: KakaoAddress) => {
-    const display = address.roadAddress || address.jibunAddress;
+    const display =
+      address.roadAddress || address.jibunAddress || address.title;
 
     skipNextSearchRef.current = true;
 
@@ -98,14 +97,42 @@ export function SearchBar({
     onLocationChange?.(display);
     try {
       const resolved = await zipzaApi.resolveAddress(display);
+      const resolvedLatitude = Number(resolved.latitude);
+      const resolvedLongitude = Number(resolved.longitude);
+      const hasResolvedCoordinate =
+        Number.isFinite(resolvedLatitude) &&
+        Number.isFinite(resolvedLongitude) &&
+        (resolvedLatitude !== 0 || resolvedLongitude !== 0);
+
       onAddressSelect?.({
-        roadAddress: resolved.roadAddress,
-        jibunAddress: resolved.jibunAddress,
-        lat: String(resolved.latitude),
-        lon: String(resolved.longitude),
+        title: resolved.buildingName || address.title,
+        roadAddress: resolved.roadAddress || address.roadAddress,
+        jibunAddress: resolved.jibunAddress || address.jibunAddress,
+        lat: hasResolvedCoordinate ? String(resolvedLatitude) : address.lat,
+        lon: hasResolvedCoordinate ? String(resolvedLongitude) : address.lon,
       });
     } catch {
       onAddressSelect?.(address);
+    }
+  };
+
+  const handleSubmit = async () => {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) return;
+
+    if (suggestions.length > 0) {
+      await handleSelect(suggestions[0]);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const nextSuggestions = await fetchAddressSuggestions(trimmedQuery);
+      setSuggestions(nextSuggestions);
+      setIsOpen(nextSuggestions.length > 0);
+      if (nextSuggestions[0]) await handleSelect(nextSuggestions[0]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -118,14 +145,13 @@ export function SearchBar({
 
   const highlight = (text: string, keyword: string) => {
     if (!keyword) return <>{text}</>;
-    const regex = new RegExp(
-      `(${keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-      "gi"
-    );
+    const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const splitRegex = new RegExp(`(${escapedKeyword})`, "gi");
+    const testRegex = new RegExp(`^${escapedKeyword}$`, "i");
     return (
       <>
-        {text.split(regex).map((part, i) =>
-          regex.test(part) ? (
+        {text.split(splitRegex).map((part, i) =>
+          testRegex.test(part) ? (
             <mark
               key={i}
               className="bg-yellow-100 text-yellow-900 rounded px-0.5 not-italic"
@@ -154,6 +180,11 @@ export function SearchBar({
             onKeyDown={e => {
               if (e.key === "Escape") {
                 setIsOpen(false);
+                return;
+              }
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void handleSubmit();
               }
             }}
             placeholder="도로명, 지번, 건물명으로 검색"
@@ -181,6 +212,11 @@ export function SearchBar({
                 >
                   <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
                   <div className="min-w-0">
+                    {addr.title && (
+                      <div className="mb-1 truncate text-sm font-semibold text-gray-900">
+                        {highlight(addr.title, query)}
+                      </div>
+                    )}
                     {addr.roadAddress && (
                       <div className="flex items-center gap-1.5 mb-0.5">
                         <span className="text-[10px] font-medium text-blue-600 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
@@ -219,4 +255,57 @@ export function SearchBar({
       </div>
     </div>
   );
+}
+
+async function fetchAddressSuggestions(query: string): Promise<KakaoAddress[]> {
+  const [kakaoResult, apiResult] = await Promise.allSettled([
+    searchKakaoLocations(query, { size: 8 }),
+    zipzaApi.searchAddress(query),
+  ]);
+
+  const kakaoAddresses =
+    kakaoResult.status === "fulfilled"
+      ? kakaoResult.value.map(kakaoLocationToAddress)
+      : [];
+  const apiAddresses =
+    apiResult.status === "fulfilled"
+      ? (apiResult.value.documents ?? []).map(doc => ({
+          title: doc.roadAddress || doc.jibunAddress,
+          roadAddress: doc.roadAddress ?? "",
+          jibunAddress: doc.jibunAddress ?? "",
+          lat: String(doc.latitude),
+          lon: String(doc.longitude),
+        }))
+      : [];
+
+  return dedupeAddresses([...kakaoAddresses, ...apiAddresses]).filter(
+    address => Number(address.lat) || Number(address.lon)
+  );
+}
+
+function kakaoLocationToAddress(
+  location: KakaoLocationSuggestion
+): KakaoAddress {
+  return {
+    title: location.title,
+    roadAddress: location.roadAddress,
+    jibunAddress: location.jibunAddress,
+    lat: String(location.latitude),
+    lon: String(location.longitude),
+  };
+}
+
+function dedupeAddresses(addresses: KakaoAddress[]) {
+  const deduped = new Map<string, KakaoAddress>();
+
+  addresses.forEach(address => {
+    const key = [
+      address.roadAddress || address.jibunAddress || address.title,
+      Number(address.lat).toFixed(6),
+      Number(address.lon).toFixed(6),
+    ].join("|");
+    if (!deduped.has(key)) deduped.set(key, address);
+  });
+
+  return Array.from(deduped.values());
 }

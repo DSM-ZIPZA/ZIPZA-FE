@@ -3,14 +3,7 @@ import type { Property } from "@/shared/types";
 import { usePersistFn } from "@/hooks/usePersistFn";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-
-declare global {
-  interface Window {
-    kakao?: any;
-  }
-}
-
-const KAKAO_APP_KEY = import.meta.env.VITE_KAKAO_APP_KEY;
+import { loadKakaoMapScript } from "@/shared/lib/kakaoMaps";
 
 const SEOUL_CENTER = { lat: 37.5665, lng: 126.978 };
 const DEFAULT_ZOOM = 5;
@@ -26,27 +19,6 @@ const DISCOVERY_MIN_INTERVAL_MS = 2500;
 
 const SELECTED_MARKER_IMG =
   "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
-
-function loadKakaoMapScript() {
-  return new Promise<void>((resolve, reject) => {
-    if (window.kakao?.maps?.services) {
-      resolve();
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_APP_KEY}&autoload=false&libraries=services`;
-    script.async = true;
-    script.onload = () => {
-      window.kakao.maps.load(() => resolve());
-    };
-    script.onerror = () => {
-      console.error("Failed to load Kakao Map script");
-      reject(new Error("Kakao Map script load failed"));
-    };
-    document.head.appendChild(script);
-  });
-}
 
 function getUserLocation(): Promise<{ lat: number; lng: number }> {
   return new Promise(resolve => {
@@ -151,6 +123,7 @@ export function KakaoMapView({
   useEffect(() => {
     if (!mapReady || !map.current || !window.kakao?.maps || !resolvedCenter)
       return;
+    map.current.setLevel?.(zoom);
     map.current.panTo(
       new window.kakao.maps.LatLng(resolvedCenter.lat, resolvedCenter.lng)
     );

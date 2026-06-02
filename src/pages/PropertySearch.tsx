@@ -7,6 +7,7 @@ import { PropertyAnalysisDrawer } from "@/components/analysis/PropertyAnalysisDr
 import { LoginModal } from "@/shared/ui/LoginModal";
 import { useAuth } from "@/shared/contexts/AuthContext";
 import { VisibleResidentialBuildingList } from "@/components/search/VisibleResidentialBuildingList";
+import { SearchBar, type KakaoAddress } from "@/components/search/SearchBar";
 import { toWon } from "@/shared/api/client";
 import { zipzaApi } from "@/shared/api/zipza";
 
@@ -61,13 +62,33 @@ export default function PropertySearch() {
   );
   const averageSalePriceInFlight = useRef(new Set<string>());
   const [selectedTarget, setSelectedTarget] = useState<Property | null>(null);
-  const [mapState] = useState<MapState>({
+  const [mapState, setMapState] = useState<MapState>({
     center: { lat: DEFAULT_LOCATION.lat, lng: DEFAULT_LOCATION.lng },
     zoom: DEFAULT_LOCATION.zoom,
   });
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [transactionType, setTransactionType] = useState<"rent" | "lease">(
     "lease"
+  );
+
+  const moveMapTo = useCallback((lat: number, lng: number) => {
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    if (lat === 0 && lng === 0) return;
+
+    setMapState({
+      center: { lat, lng },
+      zoom: DEFAULT_LOCATION.zoom,
+    });
+  }, []);
+
+  const handleAddressSelect = useCallback(
+    (address: KakaoAddress) => {
+      moveMapTo(Number(address.lat), Number(address.lon));
+      setVisibleBuildings([]);
+      setSelectedTarget(null);
+      setDrawerOpen(false);
+    },
+    [moveMapTo]
   );
 
   const mapBuildings = useMemo(
@@ -179,6 +200,7 @@ export default function PropertySearch() {
 
   const handleBuildingSelect = async (building: Property) => {
     let target = applyTransactionType(building, transactionType);
+    moveMapTo(target.latitude, target.longitude);
     setSelectedTarget(target);
     setDrawerOpen(true);
 
@@ -201,6 +223,7 @@ export default function PropertySearch() {
         latitude: resolved.latitude,
         longitude: resolved.longitude,
       };
+      moveMapTo(target.latitude, target.longitude);
       setSelectedTarget(target);
     } catch {
       setSelectedTarget(target);
@@ -223,6 +246,7 @@ export default function PropertySearch() {
 
       <div className="flex flex-1 overflow-hidden">
         <div className="w-full md:w-96 flex flex-col bg-white border-r border-gray-200 overflow-hidden">
+          <SearchBar onAddressSelect={handleAddressSelect} />
           <VisibleResidentialBuildingList
             buildings={mapBuildings}
             selectedBuildingId={selectedTarget?.id}
