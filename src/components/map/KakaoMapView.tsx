@@ -14,7 +14,15 @@ const KAKAO_APP_KEY = import.meta.env.VITE_KAKAO_APP_KEY;
 
 const SEOUL_CENTER = { lat: 37.5665, lng: 126.978 };
 const DEFAULT_ZOOM = 5;
-const RESIDENTIAL_KEYWORDS = ["아파트", "오피스텔", "빌라", "연립주택", "다세대주택"];
+const RESIDENTIAL_KEYWORDS = [
+  "아파트",
+  "오피스텔",
+  "빌라",
+  "연립주택",
+  "다세대주택",
+];
+const DISCOVERY_DEBOUNCE_MS = 900;
+const DISCOVERY_MIN_INTERVAL_MS = 2500;
 
 const SELECTED_MARKER_IMG =
   "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png";
@@ -89,6 +97,10 @@ export function KakaoMapView({
   const map = useRef<any>(null);
   const markersRef = useRef<Map<string, any>>(new Map());
   const searchTimerRef = useRef<number | null>(null);
+  const searchInFlightRef = useRef(false);
+  const queuedSearchRef = useRef(false);
+  const lastSearchAtRef = useRef(0);
+  const lastSearchSignatureRef = useRef<string | null>(null);
   const [resolvedCenter, setResolvedCenter] = useState<{
     lat: number;
     lng: number;
@@ -152,84 +164,118 @@ export function KakaoMapView({
     ) {
       return;
     }
+    if (searchInFlightRef.current) {
+      queuedSearchRef.current = true;
+      return;
+    }
 
-    const places = new window.kakao.maps.services.Places(map.current);
-    const results = await Promise.all(
-      RESIDENTIAL_KEYWORDS.map(
-        keyword =>
-          new Promise<any[]>(resolve => {
-            places.keywordSearch(
-              keyword,
-              (data: any[], status: string) => {
-                if (status === window.kakao.maps.services.Status.OK) {
-                  resolve(data);
-                  return;
+    const bounds = map.current.getBounds();
+    const southWest = bounds.getSouthWest();
+    const northEast = bounds.getNorthEast();
+    const signature = [
+      map.current.getLevel?.() ?? zoom,
+      southWest.getLat().toFixed(3),
+      southWest.getLng().toFixed(3),
+      northEast.getLat().toFixed(3),
+      northEast.getLng().toFixed(3),
+    ].join("|");
+
+    if (signature === lastSearchSignatureRef.current) return;
+
+    searchInFlightRef.current = true;
+    lastSearchAtRef.current = Date.now();
+    try {
+      const places = new window.kakao.maps.services.Places(map.current);
+      const results = await Promise.all(
+        RESIDENTIAL_KEYWORDS.map(
+          keyword =>
+            new Promise<any[]>(resolve => {
+              places.keywordSearch(
+                keyword,
+                (data: any[], status: string) => {
+                  if (status === window.kakao.maps.services.Status.OK) {
+                    resolve(data);
+                    return;
+                  }
+                  resolve([]);
+                },
+                {
+                  useMapBounds: true,
+                  size: 15,
                 }
-                resolve([]);
-              },
-              {
-                useMapBounds: true,
-                size: 15,
-              }
-            );
-          })
-      )
-    );
+              );
+            })
+        )
+      );
 
-    const deduped = new Map<string, Property>();
-    results.flat().forEach(place => {
-      const title = place.place_name || "";
-      const roadAddress = place.road_address_name || "";
-      const jibunAddress = place.address_name || "";
-      const lat = Number(place.y);
-      const lng = Number(place.x);
-      if (!title || Number.isNaN(lat) || Number.isNaN(lng)) return;
+      const deduped = new Map<string, Property>();
+      results.flat().forEach(place => {
+        const title = place.place_name || "";
+        const roadAddress = place.road_address_name || "";
+        const jibunAddress = place.address_name || "";
+        const lat = Number(place.y);
+        const lng = Number(place.x);
+        if (!title || Number.isNaN(lat) || Number.isNaN(lng)) return;
 
-      const categoryName = place.category_name || "";
-      const isResidential =
-        RESIDENTIAL_KEYWORDS.some(keyword => title.includes(keyword)) ||
-        RESIDENTIAL_KEYWORDS.some(keyword => categoryName.includes(keyword)) ||
-        categoryName.includes("주거시설");
-      if (!isResidential) return;
+        const categoryName = place.category_name || "";
+        const isResidential =
+          RESIDENTIAL_KEYWORDS.some(keyword => title.includes(keyword)) ||
+          RESIDENTIAL_KEYWORDS.some(keyword =>
+            categoryName.includes(keyword)
+          ) ||
+          categoryName.includes("주거시설");
+        if (!isResidential) return;
 
-      const id = place.id || `${title}-${roadAddress || jibunAddress}`;
-      if (deduped.has(id)) return;
+        const id = place.id || `${title}-${roadAddress || jibunAddress}`;
+        if (deduped.has(id)) return;
 
-      deduped.set(id, {
-        id,
-        title,
-        description: roadAddress || jibunAddress,
-        type:
-          title.includes("아파트") || categoryName.includes("아파트")
-            ? "apartment"
-            : "villa",
-        transactionType: "lease",
-        price: 0,
-        deposit: 0,
-        monthlyRent: 0,
-        averageSalePrice: undefined,
-        averageSalePriceStatus: "loading",
-        area: 0,
-        exclusiveAreaM2: 0,
-        rooms: 0,
-        bathrooms: 0,
-        floor: 0,
-        totalFloors: 0,
-        address: roadAddress || jibunAddress,
-        roadAddress,
-        jibunAddress,
-        isApartment: title.includes("아파트") || categoryName.includes("아파트"),
-        latitude: lat,
-        longitude: lng,
-        images: [],
-        features: [],
-        contact: { name: "", phone: "" },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        deduped.set(id, {
+          id,
+          title,
+          description: roadAddress || jibunAddress,
+          type:
+            title.includes("아파트") || categoryName.includes("아파트")
+              ? "apartment"
+              : "villa",
+          transactionType: "lease",
+          price: 0,
+          deposit: 0,
+          monthlyRent: 0,
+          averageSalePrice: undefined,
+          averageSalePriceStatus: "loading",
+          area: 0,
+          exclusiveAreaM2: 0,
+          rooms: 0,
+          bathrooms: 0,
+          floor: 0,
+          totalFloors: 0,
+          address: roadAddress || jibunAddress,
+          roadAddress,
+          jibunAddress,
+          isApartment:
+            title.includes("아파트") || categoryName.includes("아파트"),
+          latitude: lat,
+          longitude: lng,
+          images: [],
+          features: [],
+          contact: { name: "", phone: "" },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
       });
-    });
 
-    onVisibleBuildingsChange?.(Array.from(deduped.values()));
+      lastSearchSignatureRef.current = signature;
+      onVisibleBuildingsChange?.(Array.from(deduped.values()));
+    } finally {
+      searchInFlightRef.current = false;
+      if (queuedSearchRef.current) {
+        queuedSearchRef.current = false;
+        if (searchTimerRef.current) window.clearTimeout(searchTimerRef.current);
+        searchTimerRef.current = window.setTimeout(() => {
+          discoverVisibleBuildings();
+        }, DISCOVERY_DEBOUNCE_MS);
+      }
+    }
   });
 
   useEffect(() => {
@@ -238,9 +284,16 @@ export function KakaoMapView({
 
     const scheduleSearch = () => {
       if (searchTimerRef.current) window.clearTimeout(searchTimerRef.current);
-      searchTimerRef.current = window.setTimeout(() => {
-        discoverVisibleBuildings();
-      }, 250);
+      const remainingInterval = Math.max(
+        0,
+        DISCOVERY_MIN_INTERVAL_MS - (Date.now() - lastSearchAtRef.current)
+      );
+      searchTimerRef.current = window.setTimeout(
+        () => {
+          discoverVisibleBuildings();
+        },
+        Math.max(DISCOVERY_DEBOUNCE_MS, remainingInterval)
+      );
     };
 
     scheduleSearch();

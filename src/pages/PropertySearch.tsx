@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { Property, MapState } from "@/shared/types";
 import { DEFAULT_LOCATION } from "@/shared/const";
 import { KakaoMapView } from "@/components/map/KakaoMapView";
@@ -20,9 +20,46 @@ function applyTransactionType(
   };
 }
 
+const AVERAGE_PRICE_CONCURRENCY = 4;
+
+function getAverageSalePriceKey(building: Property) {
+  const address =
+    building.roadAddress ||
+    building.jibunAddress ||
+    building.address ||
+    building.title;
+  return [
+    address.trim(),
+    Number.isFinite(building.latitude) ? building.latitude.toFixed(5) : "",
+    Number.isFinite(building.longitude) ? building.longitude.toFixed(5) : "",
+  ].join("|");
+}
+
+async function runWithConcurrency<T>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T) => Promise<void>
+) {
+  let index = 0;
+  const workers = Array.from(
+    { length: Math.min(concurrency, items.length) },
+    async () => {
+      while (index < items.length) {
+        const item = items[index++];
+        await worker(item);
+      }
+    }
+  );
+  await Promise.all(workers);
+}
+
 export default function PropertySearch() {
   const { user } = useAuth();
   const [visibleBuildings, setVisibleBuildings] = useState<Property[]>([]);
+  const averageSalePriceCache = useRef(
+    new Map<string, { price?: number; status: "ready" | "empty" }>()
+  );
+  const averageSalePriceInFlight = useRef(new Set<string>());
   const [selectedTarget, setSelectedTarget] = useState<Property | null>(null);
   const [mapState] = useState<MapState>({
     center: { lat: DEFAULT_LOCATION.lat, lng: DEFAULT_LOCATION.lng },
@@ -43,49 +80,95 @@ export default function PropertySearch() {
 
   const handleVisibleBuildingsChange = useCallback(
     (buildings: Property[]) => {
+      const uniqueBuildings = Array.from(
+        new Map(
+          buildings.map(building => [
+            getAverageSalePriceKey(building),
+            building,
+          ])
+        ).values()
+      );
+
       setVisibleBuildings(
-        buildings.map(building => ({
-          ...building,
-          averageSalePriceStatus: user ? "loading" : "empty",
-        }))
+        uniqueBuildings.map(building => {
+          const cacheKey = getAverageSalePriceKey(building);
+          const cached = averageSalePriceCache.current.get(cacheKey);
+          return {
+            ...building,
+            averageSalePrice: cached?.price,
+            averageSalePriceStatus: user
+              ? (cached?.status ?? "loading")
+              : "empty",
+          };
+        })
       );
 
       if (!user) return;
 
-      buildings.forEach(building => {
-        zipzaApi
-          .getAverageSalePrice({
-            query: building.roadAddress || building.jibunAddress || building.address || building.title,
-            latitude: building.latitude,
-            longitude: building.longitude,
-            radiusMeters: 250,
-          })
-          .then(response => {
+      const targets = uniqueBuildings.filter(building => {
+        const cacheKey = getAverageSalePriceKey(building);
+        return (
+          !averageSalePriceCache.current.has(cacheKey) &&
+          !averageSalePriceInFlight.current.has(cacheKey)
+        );
+      });
+
+      targets.forEach(building => {
+        averageSalePriceInFlight.current.add(getAverageSalePriceKey(building));
+      });
+
+      void runWithConcurrency(
+        targets,
+        AVERAGE_PRICE_CONCURRENCY,
+        async building => {
+          const cacheKey = getAverageSalePriceKey(building);
+          try {
+            const response = await zipzaApi.getAverageSalePrice({
+              query:
+                building.roadAddress ||
+                building.jibunAddress ||
+                building.address ||
+                building.title,
+              latitude: building.latitude,
+              longitude: building.longitude,
+              radiusMeters: 250,
+            });
             const price = response.averageSalePriceManwon
               ? toWon(response.averageSalePriceManwon)
               : undefined;
+            const result = {
+              price,
+              status: price ? "ready" : "empty",
+            } satisfies { price?: number; status: "ready" | "empty" };
+            averageSalePriceCache.current.set(cacheKey, result);
             setVisibleBuildings(current =>
               current.map(item =>
-                item.id === building.id
+                getAverageSalePriceKey(item) === cacheKey
                   ? {
                       ...item,
                       averageSalePrice: price,
-                      averageSalePriceStatus: price ? "ready" : "empty",
+                      averageSalePriceStatus: result.status,
                     }
                   : item
               )
             );
-          })
-          .catch(() => {
+          } catch {
+            const result = { status: "empty" } satisfies {
+              status: "empty";
+            };
+            averageSalePriceCache.current.set(cacheKey, result);
             setVisibleBuildings(current =>
               current.map(item =>
-                item.id === building.id
+                getAverageSalePriceKey(item) === cacheKey
                   ? { ...item, averageSalePriceStatus: "empty" }
                   : item
               )
             );
-          });
-      });
+          } finally {
+            averageSalePriceInFlight.current.delete(cacheKey);
+          }
+        }
+      );
     },
     [user]
   );
