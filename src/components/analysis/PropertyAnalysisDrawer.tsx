@@ -61,9 +61,13 @@ export function PropertyAnalysisDrawer({
     setExclusiveArea(
       property?.exclusiveAreaM2 ? String(property.exclusiveAreaM2) : ""
     );
-    setDeposit(property?.deposit ? String(Math.round(property.deposit / 10000)) : "");
+    setDeposit(
+      property?.deposit ? String(Math.round(property.deposit / 10000)) : ""
+    );
     setMonthlyRent(
-      property?.monthlyRent ? String(Math.round(property.monthlyRent / 10000)) : ""
+      property?.monthlyRent
+        ? String(Math.round(property.monthlyRent / 10000))
+        : ""
     );
     const today = new Date();
     const balance = new Date(today);
@@ -112,7 +116,10 @@ export function PropertyAnalysisDrawer({
         monthlyRent: monthlyRent ? Number(monthlyRent) : null,
         floor: Number(floor || property.floor || 1),
         exclusiveArea: Number(
-          exclusiveArea || property.exclusiveAreaM2 || property.area * 3.3058 || 0
+          exclusiveArea ||
+            property.exclusiveAreaM2 ||
+            property.area * 3.3058 ||
+            0
         ),
         contractDate,
         balanceDate,
@@ -122,20 +129,25 @@ export function PropertyAnalysisDrawer({
       await zipzaApi.startAnalysis(created.requestId, {
         building: { dong: dong || "1", ho: ho || "1" },
         registry: { address: property.roadAddress ?? property.address },
-        rentTradeMonths: 24,
+        rentTradeMonths: 12,
       });
       const detail = await zipzaApi.getAnalysisDetail(created.requestId);
       setAnalysisResult(detailToPropertyDetail(detail));
     } catch (error) {
-      const status = error instanceof Error && "status" in error
-        ? Number((error as { status: number }).status)
-        : null;
+      const status =
+        error instanceof Error && "status" in error
+          ? Number((error as { status: number }).status)
+          : null;
       if (status === 401) {
         setErrorMessage("로그인 세션이 만료되었습니다. 다시 로그인해주세요.");
       } else if (status === 403) {
-        setErrorMessage("서버에서 요청 권한을 거부했습니다. 로그인 토큰은 유지했으니 잠시 후 다시 시도해주세요.");
+        setErrorMessage(
+          "서버에서 요청 권한을 거부했습니다. 로그인 토큰은 유지했으니 잠시 후 다시 시도해주세요."
+        );
       } else {
-        setErrorMessage("분석을 실행하지 못했습니다. 입력값과 서버 상태를 확인해주세요.");
+        setErrorMessage(
+          "분석을 실행하지 못했습니다. 입력값과 서버 상태를 확인해주세요."
+        );
       }
     } finally {
       setIsAnalyzing(false);

@@ -42,9 +42,12 @@ export const zipzaApi = {
     if (params.radiusMeters != null)
       search.set("radiusMeters", String(params.radiusMeters));
     if (params.query) search.set("query", params.query);
-    if (params.transactionType) search.set("transactionType", params.transactionType);
-    if (params.depositMin != null) search.set("depositMin", String(params.depositMin));
-    if (params.depositMax != null) search.set("depositMax", String(params.depositMax));
+    if (params.transactionType)
+      search.set("transactionType", params.transactionType);
+    if (params.depositMin != null)
+      search.set("depositMin", String(params.depositMin));
+    if (params.depositMax != null)
+      search.set("depositMax", String(params.depositMax));
     if (params.monthlyRentMin != null)
       search.set("monthlyRentMin", String(params.monthlyRentMin));
     if (params.monthlyRentMax != null)
@@ -56,16 +59,25 @@ export const zipzaApi = {
   },
   getAverageSalePrice: (params: {
     query?: string;
+    buildingName?: string;
+    isApartment?: boolean;
     latitude?: number;
     longitude?: number;
     radiusMeters?: number;
+    months?: number;
   }) => {
     const search = new URLSearchParams();
     if (params.query) search.set("query", params.query);
-    if (params.latitude != null) search.set("latitude", String(params.latitude));
-    if (params.longitude != null) search.set("longitude", String(params.longitude));
+    if (params.buildingName) search.set("buildingName", params.buildingName);
+    if (params.isApartment != null)
+      search.set("isApartment", String(params.isApartment));
+    if (params.latitude != null)
+      search.set("latitude", String(params.latitude));
+    if (params.longitude != null)
+      search.set("longitude", String(params.longitude));
     if (params.radiusMeters != null)
       search.set("radiusMeters", String(params.radiusMeters));
+    if (params.months != null) search.set("months", String(params.months));
     return apiRequest<AverageSalePriceResponse>(
       `/api/property-prices/average-sale${search.size ? `?${search}` : ""}`
     );

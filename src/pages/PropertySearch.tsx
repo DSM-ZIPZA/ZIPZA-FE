@@ -129,9 +129,13 @@ export default function PropertySearch() {
                 building.jibunAddress ||
                 building.address ||
                 building.title,
+              buildingName: building.title,
+              isApartment:
+                building.isApartment ?? building.type === "apartment",
               latitude: building.latitude,
               longitude: building.longitude,
               radiusMeters: 250,
+              months: 12,
             });
             const price = response.averageSalePriceManwon
               ? toWon(response.averageSalePriceManwon)
