@@ -16,6 +16,10 @@ interface PropertyAnalysisDrawerProps {
   sidebarWidth?: number;
 }
 
+function firstNonBlank(...values: Array<string | null | undefined>): string {
+  return values.map(value => value?.trim()).find(Boolean) ?? "";
+}
+
 export function PropertyAnalysisDrawer({
   property,
   isOpen,
@@ -95,10 +99,29 @@ export function PropertyAnalysisDrawer({
     setIsAnalyzing(true);
     setErrorMessage("");
     try {
+      const roadAddress = firstNonBlank(
+        property.roadAddress,
+        property.address,
+        property.jibunAddress,
+        property.title
+      );
+      const jibunAddress = firstNonBlank(
+        property.jibunAddress,
+        property.address,
+        property.roadAddress,
+        property.title
+      );
+      const registryAddress = firstNonBlank(
+        property.roadAddress,
+        property.jibunAddress,
+        property.address,
+        property.title
+      );
+
       const created = await zipzaApi.createAnalysisRequest({
         property: {
-          roadAddress: property.roadAddress ?? property.address,
-          jibunAddress: property.jibunAddress ?? property.address,
+          roadAddress,
+          jibunAddress,
           detailAddress: property.detailAddress ?? `${dong}동 ${ho}호`,
           buildingManagementNumber: property.buildingManagementNumber ?? "",
           postalCode: property.postalCode ?? "",
@@ -128,7 +151,7 @@ export function PropertyAnalysisDrawer({
       setRequestId(created.requestId);
       await zipzaApi.startAnalysis(created.requestId, {
         building: { dong: dong || "1", ho: ho || "1" },
-        registry: { address: property.roadAddress ?? property.address },
+        registry: { address: registryAddress },
         rentTradeMonths: 12,
       });
       const detail = await zipzaApi.getAnalysisDetail(created.requestId);
