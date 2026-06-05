@@ -20,6 +20,24 @@ function firstNonBlank(...values: Array<string | null | undefined>): string {
   return values.map(value => value?.trim()).find(Boolean) ?? "";
 }
 
+function formatUnitDetail(dong: string, ho: string): string {
+  return [
+    dong.trim() ? `${dong.trim()}동` : "",
+    ho.trim() ? `${ho.trim()}호` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function appendDetailAddress(address: string, detailAddress: string): string {
+  if (!address || !detailAddress) return address || detailAddress;
+  const normalizedAddress = address.replace(/\s+/g, "");
+  const normalizedDetail = detailAddress.replace(/\s+/g, "");
+  return normalizedAddress.includes(normalizedDetail)
+    ? address
+    : `${address} ${detailAddress}`;
+}
+
 export function PropertyAnalysisDrawer({
   property,
   isOpen,
@@ -111,18 +129,20 @@ export function PropertyAnalysisDrawer({
         property.roadAddress,
         property.title
       );
+      const unitDetailAddress = firstNonBlank(
+        property.detailAddress,
+        formatUnitDetail(dong, ho)
+      );
       const registryAddress = firstNonBlank(
-        property.roadAddress,
-        property.jibunAddress,
-        property.address,
-        property.title
+        appendDetailAddress(roadAddress, unitDetailAddress),
+        appendDetailAddress(jibunAddress, unitDetailAddress)
       );
 
       const created = await zipzaApi.createAnalysisRequest({
         property: {
           roadAddress,
           jibunAddress,
-          detailAddress: property.detailAddress ?? `${dong}동 ${ho}호`,
+          detailAddress: unitDetailAddress || null,
           buildingManagementNumber: property.buildingManagementNumber ?? "",
           postalCode: property.postalCode ?? "",
           administrativeCode: property.administrativeCode ?? "",
