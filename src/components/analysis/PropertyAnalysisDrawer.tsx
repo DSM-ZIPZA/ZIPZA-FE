@@ -38,6 +38,13 @@ function appendDetailAddress(address: string, detailAddress: string): string {
     : `${address} ${detailAddress}`;
 }
 
+function optionalNumber(value: string): number {
+  const trimmed = value.trim();
+  if (!trimmed) return 0;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 export function PropertyAnalysisDrawer({
   property,
   isOpen,
@@ -157,13 +164,8 @@ export function PropertyAnalysisDrawer({
         contractType: transactionToContractType(property.transactionType),
         depositAmount: Number(deposit || 0),
         monthlyRent: monthlyRent ? Number(monthlyRent) : null,
-        floor: Number(floor || property.floor || 1),
-        exclusiveArea: Number(
-          exclusiveArea ||
-            property.exclusiveAreaM2 ||
-            property.area * 3.3058 ||
-            0
-        ),
+        floor: optionalNumber(floor),
+        exclusiveArea: optionalNumber(exclusiveArea),
         contractDate,
         balanceDate,
         expiryDate,
@@ -289,7 +291,7 @@ export function PropertyAnalysisDrawer({
 
               <div>
                 <span className="block text-xs text-gray-400 font-medium mb-1.5">
-                  층 / 전용면적
+                  층 / 전용면적 선택
                 </span>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="border border-gray-200 rounded-md px-2.5 py-2 text-sm text-gray-800 flex items-center gap-1">
@@ -297,7 +299,7 @@ export function PropertyAnalysisDrawer({
                       type="number"
                       value={floor}
                       onChange={e => setFloor(e.target.value)}
-                      placeholder="층"
+                      placeholder="선택"
                       className="w-full outline-none"
                     />
                     <span className="text-[11px] text-gray-400">층</span>
@@ -307,7 +309,7 @@ export function PropertyAnalysisDrawer({
                       type="number"
                       value={exclusiveArea}
                       onChange={e => setExclusiveArea(e.target.value)}
-                      placeholder="㎡"
+                      placeholder="선택"
                       className="w-full outline-none"
                     />
                     <span className="text-[11px] text-gray-400">㎡</span>
