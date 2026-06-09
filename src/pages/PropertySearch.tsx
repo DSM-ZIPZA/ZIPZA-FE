@@ -206,7 +206,11 @@ export default function PropertySearch() {
               price,
               status: price ? "ready" : "empty",
             } satisfies { price?: number; status: "ready" | "empty" };
-            averageSalePriceCache.current.set(cacheKey, result);
+            if (price) {
+              averageSalePriceCache.current.set(cacheKey, result);
+            } else {
+              averageSalePriceCache.current.delete(cacheKey);
+            }
             setVisibleBuildings(current =>
               current.map(item =>
                 getAverageSalePriceKey(item) === cacheKey
@@ -222,7 +226,7 @@ export default function PropertySearch() {
             const result = { status: "empty" } satisfies {
               status: "empty";
             };
-            averageSalePriceCache.current.set(cacheKey, result);
+            averageSalePriceCache.current.delete(cacheKey);
             setVisibleBuildings(current =>
               current.map(item =>
                 getAverageSalePriceKey(item) === cacheKey
