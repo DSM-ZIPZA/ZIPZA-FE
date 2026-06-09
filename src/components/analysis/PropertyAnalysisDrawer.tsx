@@ -150,7 +150,10 @@ export function PropertyAnalysisDrawer({
         },
         contractType: transactionToContractType(property.transactionType),
         depositAmount: Number(deposit || 0),
-        monthlyRent: monthlyRent ? Number(monthlyRent) : null,
+        monthlyRent:
+          property.transactionType === "rent" && monthlyRent
+            ? Number(monthlyRent)
+            : null,
         contractDate,
         balanceDate,
         expiryDate,
@@ -274,21 +277,23 @@ export function PropertyAnalysisDrawer({
                 </div>
               </div>
 
-              <div>
-                <span className="block text-xs text-gray-400 font-medium mb-1.5">
-                  월세
-                </span>
-                <div className="border border-gray-200 rounded-md px-2.5 py-2 text-sm text-gray-800 flex justify-between items-center">
-                  <input
-                    type="number"
-                    value={monthlyRent}
-                    onChange={e => setMonthlyRent(e.target.value)}
-                    placeholder="만원 단위"
-                    className="w-full outline-none"
-                  />
-                  <span className="text-[11px] text-gray-400">만원</span>
+              {property.transactionType === "rent" && (
+                <div>
+                  <span className="block text-xs text-gray-400 font-medium mb-1.5">
+                    월세
+                  </span>
+                  <div className="border border-gray-200 rounded-md px-2.5 py-2 text-sm text-gray-800 flex justify-between items-center">
+                    <input
+                      type="number"
+                      value={monthlyRent}
+                      onChange={e => setMonthlyRent(e.target.value)}
+                      placeholder="만원 단위"
+                      className="w-full outline-none"
+                    />
+                    <span className="text-[11px] text-gray-400">만원</span>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div>
                 <span className="block text-xs text-gray-400 font-medium mb-1.5">

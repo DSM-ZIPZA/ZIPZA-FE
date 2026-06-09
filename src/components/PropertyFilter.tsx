@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FilterState } from "@/shared/types";
 import { X } from "lucide-react";
 
@@ -34,6 +34,13 @@ export function PropertyFilter({
   const [depositMax, setDepositMax] = useState("");
   const [rentMin, setRentMin] = useState("");
   const [rentMax, setRentMax] = useState("");
+
+  useEffect(() => {
+    if (filters.transactionType === "lease") {
+      setRentMin("");
+      setRentMax("");
+    }
+  }, [filters.transactionType]);
 
   const handlePriceInput = (
     field: "depositMin" | "depositMax" | "rentMin" | "rentMax",
@@ -172,41 +179,43 @@ export function PropertyFilter({
           </div>
         </div>
 
-        <div>
-          <p className="text-xs text-gray-500 mb-1.5">월세</p>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="relative">
-              <input
-                type="text"
-                inputMode="numeric"
-                value={rentMin}
-                onChange={e => handlePriceInput("rentMin", e.target.value)}
-                placeholder="최소"
-                className="w-full px-3 py-2 text-sm border bg-white border-gray-200 rounded-lg focus:outline-none focus:border-black placeholder:text-gray-300"
-              />
-              {rentMin && (
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">
-                  만원
-                </span>
-              )}
-            </div>
-            <div className="relative">
-              <input
-                type="text"
-                inputMode="numeric"
-                value={rentMax}
-                onChange={e => handlePriceInput("rentMax", e.target.value)}
-                placeholder="최대"
-                className="w-full px-3 py-2 text-sm border bg-white border-gray-200 rounded-lg focus:outline-none focus:border-black placeholder:text-gray-300"
-              />
-              {rentMax && (
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">
-                  만원
-                </span>
-              )}
+        {filters.transactionType === "rent" && (
+          <div>
+            <p className="text-xs text-gray-500 mb-1.5">월세</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="relative">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={rentMin}
+                  onChange={e => handlePriceInput("rentMin", e.target.value)}
+                  placeholder="최소"
+                  className="w-full px-3 py-2 text-sm border bg-white border-gray-200 rounded-lg focus:outline-none focus:border-black placeholder:text-gray-300"
+                />
+                {rentMin && (
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">
+                    만원
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={rentMax}
+                  onChange={e => handlePriceInput("rentMax", e.target.value)}
+                  placeholder="최대"
+                  className="w-full px-3 py-2 text-sm border bg-white border-gray-200 rounded-lg focus:outline-none focus:border-black placeholder:text-gray-300"
+                />
+                {rentMax && (
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">
+                    만원
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

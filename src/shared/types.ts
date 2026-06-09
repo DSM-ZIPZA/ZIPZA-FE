@@ -129,6 +129,7 @@ export interface OverallAnalysis {
 
 export interface PropertyDetail {
   id: string;
+  transactionType: TransactionType;
   name: string;
   price: number;
   dong: string;

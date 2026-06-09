@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import type { TransactionType } from "@/shared/types";
 import { TRANSACTION_TYPES } from "@/shared/const";
 import { useAuth } from "@/shared/contexts/AuthContext";
-import { ChevronDown, LogOut } from "lucide-react";
+import { ChevronDown, History, LogOut } from "lucide-react";
+import { useLocation } from "wouter";
 
 interface HeaderProps {
   transactionType: TransactionType;
@@ -21,6 +22,7 @@ export function Header({ transactionType, onTransactionTypeChange }: HeaderProps
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
+  const [, navigate] = useLocation();
 
   const tabs: Array<{ key: TransactionType; label: string }> = [
     { key: TRANSACTION_TYPES.RENT, label: "월세" },
@@ -84,6 +86,16 @@ export function Header({ transactionType, onTransactionTypeChange }: HeaderProps
                   <p className="text-xs text-gray-400 mb-0.5">이메일</p>
                   <p className="text-sm text-gray-700">{user.email}</p>
                 </div>
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    navigate("/mypage");
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  <History size={14} className="text-gray-400" />
+                  분석 기록
+                </button>
                 {/* 로그아웃 */}
                 <button
                   onClick={() => {

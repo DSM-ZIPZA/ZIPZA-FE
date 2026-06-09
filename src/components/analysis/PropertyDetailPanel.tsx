@@ -10,8 +10,11 @@ interface Props {
 }
 
 export function PropertyDetailPanel({ property }: Props) {
+  const isMonthlyRent = property.transactionType === "rent";
   const averageSalePriceLabel =
     property.avgSalePrice > 0 ? formatPrice(property.avgSalePrice) : "조회 중";
+  const monthlyRentLabel =
+    property.monthlyRent > 0 ? formatPrice(property.monthlyRent) : "정보 없음";
 
   return (
     <div className="p-5 sm:p-6 flex flex-col gap-5">
@@ -35,8 +38,12 @@ export function PropertyDetailPanel({ property }: Props) {
           <span className="text-gray-400">{property.area}㎡</span>
         </div>
         <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm mt-1">
-          <span className="text-gray-500 font-semibold">전세가 평균</span>
-          <span className="text-gray-400">{averageSalePriceLabel}</span>
+          <span className="text-gray-500 font-semibold">
+            {isMonthlyRent ? "월세" : "전세가 평균"}
+          </span>
+          <span className="text-gray-400">
+            {isMonthlyRent ? monthlyRentLabel : averageSalePriceLabel}
+          </span>
         </div>
       </section>
 

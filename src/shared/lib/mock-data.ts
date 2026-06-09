@@ -170,6 +170,7 @@ export function filterProperties(
 
 export const mockPropertyDetail: PropertyDetail = {
   id: "1",
+  transactionType: "lease",
   name: "대림두레아파트",
   price: 430000000,
   dong: "102",

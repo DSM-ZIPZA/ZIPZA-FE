@@ -115,7 +115,12 @@ export default function PropertySearch() {
   const filteredBuildings = useMemo(() => {
     const next = mapBuildings.filter(building => {
       const deposit =
-        building.averageSalePrice ?? building.deposit ?? building.price ?? 0;
+        transactionType === "lease"
+          ? (building.averageSalePrice ??
+            building.deposit ??
+            building.price ??
+            0)
+          : (building.deposit ?? building.price ?? 0);
       const monthlyRent = building.monthlyRent ?? 0;
 
       if (filters.depositMin && deposit < filters.depositMin) return false;
@@ -157,15 +162,16 @@ export default function PropertySearch() {
           const cached = averageSalePriceCache.current.get(cacheKey);
           return {
             ...building,
+            transactionType,
             averageSalePrice: cached?.price,
-            averageSalePriceStatus: user
+            averageSalePriceStatus: user && transactionType === "lease"
               ? (cached?.status ?? "loading")
               : "empty",
           };
         })
       );
 
-      if (!user) return;
+      if (!user || transactionType !== "lease") return;
 
       const targets = uniqueBuildings.filter(building => {
         const cacheKey = getAverageSalePriceKey(building);
@@ -240,7 +246,7 @@ export default function PropertySearch() {
         }
       );
     },
-    [user]
+    [transactionType, user]
   );
 
   const handleBuildingSelect = async (building: Property) => {
@@ -283,7 +289,12 @@ export default function PropertySearch() {
         onTransactionTypeChange={type => {
           if (type === "sale") return;
           setTransactionType(type);
-          setFilters(current => ({ ...current, transactionType: type }));
+          setFilters(current => ({
+            ...current,
+            transactionType: type,
+            rentMin: type === "lease" ? undefined : current.rentMin,
+            rentMax: type === "lease" ? undefined : current.rentMax,
+          }));
           setSelectedTarget(prev =>
             prev ? applyTransactionType(prev, type) : prev
           );
@@ -301,6 +312,7 @@ export default function PropertySearch() {
           />
           <VisibleResidentialBuildingList
             buildings={filteredBuildings}
+            transactionType={transactionType}
             selectedBuildingId={selectedTarget?.id}
             onSelect={handleBuildingSelect}
           />

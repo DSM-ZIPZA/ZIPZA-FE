@@ -155,6 +155,7 @@ export function detailToPropertyDetail(
   const property = listingToProperty(detail.property);
   return {
     id: detail.requestId,
+    transactionType: property.transactionType,
     name: detail.buildingInfo.name,
     price: property.price,
     dong: "",

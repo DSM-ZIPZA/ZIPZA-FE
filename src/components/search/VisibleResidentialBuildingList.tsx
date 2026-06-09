@@ -4,11 +4,16 @@ import { formatPrice } from "@/shared/lib/format";
 
 interface VisibleResidentialBuildingListProps {
   buildings: Property[];
+  transactionType: "rent" | "lease";
   selectedBuildingId?: string;
   onSelect: (building: Property) => void;
 }
 
-function getAverageSalePriceLabel(building: Property) {
+function getPriceLabel(
+  building: Property,
+  transactionType: "rent" | "lease"
+) {
+  if (transactionType === "rent") return "월세 분석";
   if (building.averageSalePriceStatus === "loading")
     return "평균전세가 조회 중";
   if (!building.averageSalePrice) return "평균전세가 정보 없음";
@@ -17,6 +22,7 @@ function getAverageSalePriceLabel(building: Property) {
 
 export function VisibleResidentialBuildingList({
   buildings,
+  transactionType,
   selectedBuildingId,
   onSelect,
 }: VisibleResidentialBuildingListProps) {
@@ -53,7 +59,7 @@ export function VisibleResidentialBuildingList({
                         {building.type === "apartment" ? "아파트" : "주거 건물"}
                       </span>
                       <span className="shrink-0 text-xs font-medium text-gray-700">
-                        {getAverageSalePriceLabel(building)}
+                        {getPriceLabel(building, transactionType)}
                       </span>
                     </div>
                   </div>
