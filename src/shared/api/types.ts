@@ -79,8 +79,8 @@ export interface AnalysisRequestCreateRequest {
   contractType: "JEONSE" | "MONTHLY_RENT";
   depositAmount: number;
   monthlyRent?: number | null;
-  floor: number;
-  exclusiveArea: number;
+  floor?: number;
+  exclusiveArea?: number;
   contractDate: string;
   balanceDate: string;
   expiryDate: string;

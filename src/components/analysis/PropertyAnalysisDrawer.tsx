@@ -38,13 +38,6 @@ function appendDetailAddress(address: string, detailAddress: string): string {
     : `${address} ${detailAddress}`;
 }
 
-function optionalNumber(value: string): number {
-  const trimmed = value.trim();
-  if (!trimmed) return 0;
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
 export function PropertyAnalysisDrawer({
   property,
   isOpen,
@@ -54,8 +47,6 @@ export function PropertyAnalysisDrawer({
   const [maintenanceFee, setMaintenanceFee] = useState("");
   const [dong, setDong] = useState("");
   const [ho, setHo] = useState("");
-  const [floor, setFloor] = useState("");
-  const [exclusiveArea, setExclusiveArea] = useState("");
   const [deposit, setDeposit] = useState("");
   const [monthlyRent, setMonthlyRent] = useState("");
   const [contractDate, setContractDate] = useState("");
@@ -86,10 +77,6 @@ export function PropertyAnalysisDrawer({
     setErrorMessage("");
     setDong("");
     setHo("");
-    setFloor(property?.floor ? String(property.floor) : "");
-    setExclusiveArea(
-      property?.exclusiveAreaM2 ? String(property.exclusiveAreaM2) : ""
-    );
     setDeposit(
       property?.deposit ? String(Math.round(property.deposit / 10000)) : ""
     );
@@ -164,8 +151,6 @@ export function PropertyAnalysisDrawer({
         contractType: transactionToContractType(property.transactionType),
         depositAmount: Number(deposit || 0),
         monthlyRent: monthlyRent ? Number(monthlyRent) : null,
-        floor: optionalNumber(floor),
-        exclusiveArea: optionalNumber(exclusiveArea),
         contractDate,
         balanceDate,
         expiryDate,
@@ -286,34 +271,6 @@ export function PropertyAnalysisDrawer({
                     className="w-full outline-none"
                   />
                   <span className="text-[11px] text-gray-400">만원</span>
-                </div>
-              </div>
-
-              <div>
-                <span className="block text-xs text-gray-400 font-medium mb-1.5">
-                  층 / 전용면적 선택
-                </span>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="border border-gray-200 rounded-md px-2.5 py-2 text-sm text-gray-800 flex items-center gap-1">
-                    <input
-                      type="number"
-                      value={floor}
-                      onChange={e => setFloor(e.target.value)}
-                      placeholder="선택"
-                      className="w-full outline-none"
-                    />
-                    <span className="text-[11px] text-gray-400">층</span>
-                  </div>
-                  <div className="border border-gray-200 rounded-md px-2.5 py-2 text-sm text-gray-800 flex items-center gap-1">
-                    <input
-                      type="number"
-                      value={exclusiveArea}
-                      onChange={e => setExclusiveArea(e.target.value)}
-                      placeholder="선택"
-                      className="w-full outline-none"
-                    />
-                    <span className="text-[11px] text-gray-400">㎡</span>
-                  </div>
                 </div>
               </div>
 
