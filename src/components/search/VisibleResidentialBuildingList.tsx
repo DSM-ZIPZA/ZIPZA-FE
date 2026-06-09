@@ -1,5 +1,4 @@
-import { useMemo, useState } from "react";
-import { Building2, MapPin, SlidersHorizontal } from "lucide-react";
+import { MapPin } from "lucide-react";
 import type { Property } from "@/shared/types";
 import { formatPrice } from "@/shared/lib/format";
 
@@ -8,22 +7,6 @@ interface VisibleResidentialBuildingListProps {
   selectedBuildingId?: string;
   onSelect: (building: Property) => void;
 }
-
-type BuildingTypeFilter = "all" | "apartment" | "villa";
-type SortType = "nearby" | "name" | "price-high" | "price-low";
-
-const typeLabels: Record<BuildingTypeFilter, string> = {
-  all: "전체",
-  apartment: "아파트",
-  villa: "주거 건물",
-};
-
-const sortLabels: Record<SortType, string> = {
-  nearby: "지도순",
-  name: "이름순",
-  "price-high": "평균전세가 높은순",
-  "price-low": "평균전세가 낮은순",
-};
 
 function getAverageSalePriceLabel(building: Property) {
   if (building.averageSalePriceStatus === "loading")
@@ -37,112 +20,12 @@ export function VisibleResidentialBuildingList({
   selectedBuildingId,
   onSelect,
 }: VisibleResidentialBuildingListProps) {
-  const [typeFilter, setTypeFilter] = useState<BuildingTypeFilter>("all");
-  const [sortType, setSortType] = useState<SortType>("nearby");
-  const [filterOpen, setFilterOpen] = useState(false);
-
-  const filteredBuildings = useMemo(() => {
-    const next = buildings.filter(building => {
-      const matchesType =
-        typeFilter === "all" ||
-        (typeFilter === "apartment" && building.type === "apartment") ||
-        (typeFilter === "villa" && building.type !== "apartment");
-      return matchesType;
-    });
-
-    if (sortType === "name") {
-      return [...next].sort((a, b) => a.title.localeCompare(b.title, "ko"));
-    }
-    if (sortType === "price-high") {
-      return [...next].sort(
-        (a, b) => (b.averageSalePrice ?? -1) - (a.averageSalePrice ?? -1)
-      );
-    }
-    if (sortType === "price-low") {
-      return [...next].sort(
-        (a, b) =>
-          (a.averageSalePrice ?? Number.MAX_SAFE_INTEGER) -
-          (b.averageSalePrice ?? Number.MAX_SAFE_INTEGER)
-      );
-    }
-    return next;
-  }, [buildings, sortType, typeFilter]);
-
-  const hasFilter = typeFilter !== "all" || sortType !== "nearby";
-
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="border-b border-gray-200 bg-slate-100 px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-gray-500" />
-            <span className="text-sm font-semibold text-gray-900">
-              화면에 보이는 주거 건물
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setFilterOpen(prev => !prev)}
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-500 hover:text-gray-900"
-            aria-label="필터"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-          </button>
-        </div>
-
-        {filterOpen && (
-          <div className="mt-3 space-y-3">
-            <div className="grid grid-cols-3 gap-1 rounded-lg bg-white p-1">
-              {(["all", "apartment", "villa"] as const).map(type => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setTypeFilter(type)}
-                  className={`rounded-md px-2 py-1.5 text-xs font-medium ${
-                    typeFilter === type
-                      ? "bg-black text-white"
-                      : "text-gray-500 hover:bg-gray-100"
-                  }`}
-                >
-                  {typeLabels[type]}
-                </button>
-              ))}
-            </div>
-
-            <select
-              value={sortType}
-              onChange={event => setSortType(event.target.value as SortType)}
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none"
-            >
-              {(["nearby", "name", "price-high", "price-low"] as const).map(
-                sort => (
-                  <option key={sort} value={sort}>
-                    {sortLabels[sort]}
-                  </option>
-                )
-              )}
-            </select>
-
-            {hasFilter && (
-              <button
-                type="button"
-                onClick={() => {
-                  setTypeFilter("all");
-                  setSortType("nearby");
-                }}
-                className="text-xs text-gray-500 hover:text-gray-900"
-              >
-                필터 초기화
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {filteredBuildings.length > 0 ? (
+        {buildings.length > 0 ? (
           <div className="divide-y divide-gray-200">
-            {filteredBuildings.map(building => {
+            {buildings.map(building => {
               const isSelected = building.id === selectedBuildingId;
               return (
                 <button

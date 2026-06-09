@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import type { Property, MapState } from "@/shared/types";
+import type { FilterState, Property, MapState } from "@/shared/types";
 import { DEFAULT_LOCATION } from "@/shared/const";
 import { KakaoMapView } from "@/components/map/KakaoMapView";
 import { Header } from "@/shared/ui/Header";
@@ -10,6 +10,7 @@ import { VisibleResidentialBuildingList } from "@/components/search/VisibleResid
 import { SearchBar, type KakaoAddress } from "@/components/search/SearchBar";
 import { toWon } from "@/shared/api/client";
 import { zipzaApi } from "@/shared/api/zipza";
+import { PropertyFilter } from "@/components/PropertyFilter";
 
 function applyTransactionType(
   building: Property,
@@ -22,6 +23,16 @@ function applyTransactionType(
 }
 
 const AVERAGE_PRICE_CONCURRENCY = 4;
+type SortType = "nearby" | "price-low" | "price-high";
+
+const INITIAL_FILTERS: FilterState = {
+  priceMin: 0,
+  priceMax: 1000000000,
+  areaMin: 0,
+  areaMax: 300,
+  types: ["apartment", "villa", "townhouse"],
+  transactionType: "lease",
+};
 
 function getAverageSalePriceKey(building: Property) {
   const address =
@@ -70,6 +81,8 @@ export default function PropertySearch() {
   const [transactionType, setTransactionType] = useState<"rent" | "lease">(
     "lease"
   );
+  const [filters, setFilters] = useState<FilterState>(INITIAL_FILTERS);
+  const [sortType, setSortType] = useState<SortType>("nearby");
 
   const moveMapTo = useCallback((lat: number, lng: number) => {
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
@@ -98,6 +111,34 @@ export default function PropertySearch() {
       ),
     [visibleBuildings, transactionType]
   );
+
+  const filteredBuildings = useMemo(() => {
+    const next = mapBuildings.filter(building => {
+      const deposit =
+        building.averageSalePrice ?? building.deposit ?? building.price ?? 0;
+      const monthlyRent = building.monthlyRent ?? 0;
+
+      if (filters.depositMin && deposit < filters.depositMin) return false;
+      if (filters.depositMax && deposit > filters.depositMax) return false;
+      if (filters.rentMin && monthlyRent < filters.rentMin) return false;
+      if (filters.rentMax && monthlyRent > filters.rentMax) return false;
+      return true;
+    });
+
+    if (sortType === "nearby") return next;
+    const getPrice = (building: Property) =>
+      transactionType === "rent"
+        ? (building.monthlyRent ?? 0)
+        : (building.averageSalePrice ??
+          building.deposit ??
+          building.price ??
+          0);
+    return [...next].sort((a, b) =>
+      sortType === "price-low"
+        ? getPrice(a) - getPrice(b)
+        : getPrice(b) - getPrice(a)
+    );
+  }, [filters, mapBuildings, sortType, transactionType]);
 
   const handleVisibleBuildingsChange = useCallback(
     (buildings: Property[]) => {
@@ -238,6 +279,7 @@ export default function PropertySearch() {
         onTransactionTypeChange={type => {
           if (type === "sale") return;
           setTransactionType(type);
+          setFilters(current => ({ ...current, transactionType: type }));
           setSelectedTarget(prev =>
             prev ? applyTransactionType(prev, type) : prev
           );
@@ -247,8 +289,14 @@ export default function PropertySearch() {
       <div className="flex flex-1 overflow-hidden">
         <div className="w-full md:w-96 flex flex-col bg-white border-r border-gray-200 overflow-hidden">
           <SearchBar onAddressSelect={handleAddressSelect} />
+          <PropertyFilter
+            filters={filters}
+            onFilterChange={setFilters}
+            sortType={sortType}
+            onSortChange={setSortType}
+          />
           <VisibleResidentialBuildingList
-            buildings={mapBuildings}
+            buildings={filteredBuildings}
             selectedBuildingId={selectedTarget?.id}
             onSelect={handleBuildingSelect}
           />
@@ -258,7 +306,7 @@ export default function PropertySearch() {
           <KakaoMapView
             center={mapState.center}
             zoom={mapState.zoom}
-            properties={mapBuildings}
+            properties={filteredBuildings}
             selectedPropertyId={selectedTarget?.id}
             onPropertySelect={handleBuildingSelect}
             discoverResidentialBuildings

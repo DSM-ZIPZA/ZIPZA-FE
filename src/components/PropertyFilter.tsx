@@ -9,12 +9,6 @@ interface PropertyFilterProps {
   onSortChange: (sort: "nearby" | "price-low" | "price-high") => void;
 }
 
-const sortLabels = {
-  nearby: "주변매물",
-  "price-low": "월세 낮은순",
-  "price-high": "월세 높은순",
-};
-
 function formatPrice(value: string): string {
   const num = value.replace(/[^0-9]/g, "");
   if (!num) return "";
@@ -28,6 +22,13 @@ export function PropertyFilter({
   onSortChange,
 }: PropertyFilterProps) {
   const [sortOpen, setSortOpen] = useState(false);
+  const priceLabel =
+    filters.transactionType === "lease" ? "전세가" : "월세";
+  const sortLabels = {
+    nearby: "주변매물",
+    "price-low": `${priceLabel} 낮은순`,
+    "price-high": `${priceLabel} 높은순`,
+  };
 
   const [depositMin, setDepositMin] = useState("");
   const [depositMax, setDepositMax] = useState("");
